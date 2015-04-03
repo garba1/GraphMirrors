@@ -353,7 +353,7 @@
 							d3.select(this).attr('transform', 'translate('+dx+','+dy+')');
 						})
 						.on('dragend', function(d) {
-							var force, x, y, expression, color;
+							var force, x, y, expression, color, result, event;
 
 							if (!_this.dragLeft) {return;}
 							if (!_this.dragAbsolute) {return;}
@@ -361,39 +361,19 @@
 							x = _this.dragAbsolute.x + _this.parent.x + _this.parent.w * 0.5,
 							y = _this.dragAbsolute.y + _this.parent.y + _this.parent.h * 0.5;
 
-							$P.state.scene.sendEvent({
+
+							event = {
 								name: 'dragPathway',
 								x: x, y: y,
 								pathwayId: d.dbId,
 								pathwayName: d.name,
-								expression: _this.getExpressionMap()});
+								expression: _this.getExpressionMap()};
+							result = $P.state.scene.sendEvent(event);
 
-								/*
-								force = $P.state.scene.sendEvent({name: 'reactionDrag', x: x, y: y});
-
-							// No object, so make a new force diagram.
-							if (!force) {
-								force = new $P.Force({x: x, y: y, w: 600, h: 600});
+							if (!result) {
+								force = new $P.SplitForce({x: x, y: y, w: 600, h: 600});
 								$P.state.scene.add(force);
-								force.addPathway(d.dbId, d.name, bubble.strokeStyle);
-								force.svg.addSymbols(d.dbId, _this.getExpressionMap(), d.symbols);}
-
-							// The object is a force, so add.
-							else if (force instanceof $P.Force) {
-								force.addPathway(d.dbId, d.name, bubble.strokeStyle);
-								force.svg.addSymbols(d.dbId, _this.getExpressionMap(), d.symbols);}
-
-							else {force = null;}
-								 */
-							if (force) {
-								color = force.getPathwayColor(d.dbId);
-								$P.state.scene.addLink(
-									new $P.BubbleLink({
-										fillStyle: color,
-										source: new $P.D3TreeRing.BubbleLinkEnd({
-											ring: self.parent,
-											datum: d3.select(this).datum()}),
-										target: new $P.BubbleLink.End({object: force})}));}
+								force.receiveEvent(event);}
 
 							d3.select(this).attr('transform', null);
 							_this.dragging = null;
