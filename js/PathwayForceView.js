@@ -80,6 +80,15 @@
 				.attr('pointer-events', 'none') // Can't click on them.
 				.attr('r', 60);
 			// Nodes in the pathway.
+			// An extra circle indicating crosstalk.
+			self.entities
+				.filter(function(d, i) {return nodes.indexed[d.layoutId];})
+				.filter(function(d, i) {return d.crosstalkCount > 1;})
+				.append('circle')
+				.attr('stroke', 'black')
+				.attr('fill', 'gray')
+				.attr('r', 10);
+			// The main circle.
 			self.entities.filter(function(d, i) {return nodes.indexed[d.layoutId];})
 				.append('circle')
 				.attr('stroke', 'black')
@@ -94,7 +103,8 @@
 				.attr('fill', self.getExpressionColor)
 				.attr('r', 2);
 			self.entityLabels = self.nodes.filter(
-				function(d, i) {return 'entitylabel' === d.klass && nodes.indexed[d.layoutId];});
+				function(d, i) {return 'entitylabel' === d.klass
+								 && nodes.indexed[self.layout.getNode('entity:'+d.id).layoutId];});
 			self.entityLabels.append('text')
 				.style('font-size', '12px')
 				.attr('text-anchor', 'middle')

@@ -122,6 +122,7 @@
 					var count = 0;
 					pathways.forEach(function(pathway) {
 						if (entity.pathways[pathway]) {++count;}});
+					entity.crosstalkCount = count;
 					entity.gravityMultiplier = 1 + (count - 1) * 5;
 				});
 			}

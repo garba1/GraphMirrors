@@ -56,11 +56,11 @@
 					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 					self.svg.main = self.svg.append('g').attr('id', 'main');
 					self.svg.defs = self.svg.append('defs');
+					self.layout.setPathways(self.pathways);
 					if (1 === self.pathways.length) {self.layoutSingle();}
 					if (2 === self.pathways.length) {self.layoutMirror();}
 					if (2 < self.pathways.length) {self.layoutRadial();}
 					self.updateSvgPosition();
-					self.display.layout.setPathways(self.pathways);
 					self.layout.force.start();}
 				$P.getJSON(
 					'./php/querybyPathwayId.php',
