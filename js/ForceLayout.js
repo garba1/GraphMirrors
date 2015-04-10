@@ -17,9 +17,10 @@
 			this.tickListeners = config.tickListeners || [];
 			this.changeListeners = config.changeListeners || [];
 			this.needsUpdate = false;
+			this.shape = config.shape || null;
 
 			this.force
-				.gravity(0.03)
+				.gravity(0)
 				.charge(function(node) {
 					if (node.charge) {return node.charge;}
 					return -30;})
@@ -68,6 +69,7 @@
 				return this.links;},
 			onTick: function() {
 				var self = this;
+				if (this.shape) {this.shape.onTick(this);}
 				this.tickListeners.forEach(function(listener) {listener(self);});},
 			registerTickListener: function(listener) {
 				this.tickListeners.push(listener);}

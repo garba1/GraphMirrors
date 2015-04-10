@@ -181,7 +181,10 @@ $P.asyncOrdered = function(callbacks) {
 
 	$P.Set = $P.defineClass(
 		null,
-		function Set() {this.data = {};},
+		function Set(list) {
+			this.data = {};
+			if (!list) {return;}
+			list.forEach(function(element) {this.data[element] = true;});},
 		{
 			put: function(key) {
 				this.data[key] = true;},
