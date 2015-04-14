@@ -72,11 +72,19 @@
 				.attr('fill', 'red')
 				.attr('width', 5).attr('height', 5);
 			self.entities = self.nodes.filter(function(d, i) {return 'entity' === d.klass;});
+			self.entities.focused = self.entities.filter(function(d, i) {return nodes.indexed[d.layoutId];});
+			self.entities.unfocused = self.entities.filter(function(d, i) {return !nodes.indexed[d.layoutId];});
 			// The big transparent background circles encoding location.
-			self.entities.append('circle')
+			self.entities.focused.append('circle')
 				.attr('stroke', 'none')
 				.attr('fill', function(entity) {return self.layout.getNode('location:'+entity.location).color;})
 				.attr('fill-opacity', 0.15)
+				.attr('pointer-events', 'none') // Can't click on them.
+				.attr('r', 60);
+			self.entities.unfocused.append('circle')
+				.attr('stroke', 'none')
+				.attr('fill', function(entity) {return self.layout.getNode('location:'+entity.location).color;})
+				.attr('fill-opacity', 0.05)
 				.attr('pointer-events', 'none') // Can't click on them.
 				.attr('r', 60);
 			// Nodes in the pathway.
@@ -89,7 +97,7 @@
 				.attr('fill', 'gray')
 				.attr('r', 10);
 			// The main circle.
-			self.entities.filter(function(d, i) {return nodes.indexed[d.layoutId];})
+			self.entities.focused
 				.append('circle')
 				.attr('stroke', 'black')
 				.attr('fill', self.getExpressionColor)
@@ -97,11 +105,12 @@
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {console.log(d);});
 			// Nodes not in the pathway.
-			self.entities.filter(function(d, i) {return !nodes.indexed[d.layoutId];})
+			self.entities.unfocused
 				.append('circle')
 				.attr('stroke', 'black')
 				.attr('fill', self.getExpressionColor)
-				.attr('r', 2);
+				.attr('r', 2)
+				.on('click', function(d) {console.log(d);});
 			self.entityLabels = self.nodes.filter(
 				function(d, i) {return 'entitylabel' === d.klass
 								 && nodes.indexed[self.layout.getNode('entity:'+d.id).layoutId];});

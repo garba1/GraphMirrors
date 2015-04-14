@@ -13,19 +13,8 @@
 					console.log('DRAGSTART');
 					d3.event.sourceEvent.stopPropagation();})
 				.on('drag.force', function(d) {
-					if ('single' === self.mode) {
-						d.px = d3.event.x;
-						d.py = d3.event.y;}
-					if ('mirror' === self.mode) {
-						if (d.side.index === 5) {
-							d.px = 500 - d3.event.x;}
-						else {
-							d.px = d3.event.x;}
-						d.py = d3.event.y;}
-					if ('radial' === self.mode) {
-						d.px = d3.event.x;
-						d.py = d3.event.y;
-					}
+					d.px = d3.event.x;
+					d.py = d3.event.y;
 					self.force.alpha(0.05);
 					self.force.tick();
 					//self.force.alpha(0);
@@ -123,7 +112,7 @@
 					pathways.forEach(function(pathway) {
 						if (entity.pathways[pathway]) {++count;}});
 					entity.crosstalkCount = count;
-					entity.gravityMultiplier = 1 + (count - 1) * 5;
+					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);
 				});
 			}
 		});
