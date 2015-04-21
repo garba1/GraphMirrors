@@ -14,6 +14,7 @@
 			this.svg.main = this.svg.append('g');
 
 			this.layout = new $P.PathwayForceLayout();
+
 			this.layout.registerTickListener(this.onTick.bind(this));
 			this.layout.force.gravity(0);
 			this.layout.gravity = 0.03;
@@ -22,20 +23,6 @@
 			this.updateSvgPosition();
 		},
 		{
-			get zoom() {
-				var self = this;
-				if (undefined === this._zoom) {
-					(function() {
-						var base = d3.behavior.zoom().scaleExtent([0.1, 10])
-									.size([500, 500]).center([0, 0])
-									.on('zoom', self.onZoom.bind(self));
-						self._zoom = function(g) {
-							base(g);
-							g.on('dblclick.zoom', null);
-						};
-					})();}
-				return this._zoom;},
-
 			get expression() {return this._expression;},
 			set expression(value) {
 				if (this._expression === value) {return;}
@@ -47,11 +34,10 @@
 				if ('down' === this._expression[symbol]) {return 'cyan';}
 				return 'white';},
 
-			addPathway: function(pathwayId) {
+			addPathway: function(pathwayId, pathwayName) {
 				var self = this;
 				function onFinish() {
-					self.zoomMod = null;
-					self.pathways.push(pathwayId);
+					self.pathways.push({id: pathwayId, name: pathwayName});
 					self.svg.remove();
 					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 					self.svg.main = self.svg.append('g').attr('id', 'main');
@@ -61,7 +47,13 @@
 					if (2 === self.pathways.length) {self.layoutMirror();}
 					if (2 < self.pathways.length) {self.layoutRadial();}
 					self.updateSvgPosition();
-					self.layout.force.start();}
+					self.layout.force.start();
+					//self.layout.doTicks(10, {no_display: true});
+					// TODO: Auto zoom out?
+					//self.layout.getBoundingBox();
+					// expand each view out to see bounding box (circle, maybe?)
+					// Since they're linked we'll get the maximal view.
+				}
 				$P.getJSON(
 					'./php/querybyPathwayId.php',
 					function (jsonData) {
@@ -128,15 +120,42 @@
 			drawSelf: function(context, scale, args) {
 				$P.HtmlObject.prototype.drawSelf.call(this, context, scale, args);},
 
-			onTick: function() {
+			onTick: function(layout, args) {
+				args = args || {};
+				if (args.no_display) {return;}
+
 				this.svg.selectAll('.node').attr('transform', function(d) {
 					return 'translate(' + d.x + ',' + d.y + ')';});
 
+				// Undirected Links.
 				this.svg.selectAll('.link line')
 					.attr('x1', function(link) {return link.source.x;})
 					.attr('y1', function(link) {return link.source.y;})
 					.attr('x2', function(link) {return link.target.x;})
-					.attr('y2', function(link) {return link.target.y;});}
+					.attr('y2', function(link) {return link.target.y;});
+
+				// Directed Links.
+				this.svg.selectAll('.link path')
+					.attr('d', function(link) {
+						var element = d3.select(this),
+								dir = $P.Vector2D(link.target.x - link.source.x, link.target.y - link.source.y).normalized(),
+								cross = dir.rotate90(),
+								sourceVec = $P.Vector2D(link.source.x, link.source.y),
+								targetVec = $P.Vector2D(link.target.x, link.target.y),
+								sourceWidth = parseFloat(element.attr('source-width')),
+								targetWidth = parseFloat(element.attr('target-width')),
+								sourceWidthVec = cross.times(sourceWidth * 0.5),
+								targetWidthVec = cross.times(targetWidth * 0.5),
+								p0 = sourceVec.minus(sourceWidthVec),
+								p1 = sourceVec.plus(sourceWidthVec),
+								p2 = targetVec.plus(targetWidthVec),
+								p3 = targetVec.minus(targetWidthVec);
+						return 'M' + p0.x + ' ' + p0.y
+							+ 'L' + p1.x + ' ' + p1.y
+							+ 'L' + p2.x + ' ' + p2.y
+							+ 'L' + p3.x + ' ' + p3.y
+							+ 'Z';
+					});}
 
 		});
 })(PATHBUBBLES);

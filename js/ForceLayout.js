@@ -18,6 +18,8 @@
 			this.changeListeners = config.changeListeners || [];
 			this.needsUpdate = false;
 			this.shape = config.shape || null;
+			this.nodeAddTriggers = {};
+			this.linkAddTriggers = {};
 
 			this.force
 				.gravity(0)
@@ -46,12 +48,30 @@
 				if (node.klass) {
 					this.nodes[node.klass] = this.nodes[node.klass] || [];
 					this.nodes[node.klass].push(node);}
+				if (this.nodeAddTriggers[node.layoutId]) {
+					this.nodeAddTriggers[node.layoutId].forEach(function(callback) {callback(node);});
+					delete this.nodeAddTriggers[node.layoutId];}
 				return true;},
 			getNode: function(layoutId) {return this.nodes.indexed[layoutId];},
 			addNodes: function(nodes) {this.nodes.forEach(this.addNode.bind(this));},
 			getNodes: function(klass) {
 				if (klass) {return this.nodes[klass];}
 				return this.nodes;},
+			// Applies function to the node immediately if it's present,
+			// otherwise it is applied when the node is added.
+			applyToNode: function(layoutId, callback) {
+				var triggers, node;
+
+				node = this.getNode(layoutId);
+				if (node) {
+					callback(node);
+					return;}
+
+				triggers = this.nodeAddTriggers[layoutId];
+				if (undefined === triggers) {
+					triggers = [];
+					this.nodeAddTriggers[layoutId] = triggers;}
+				triggers.push(callback);},
 			addLink: function(link) {
 				if (this.links.indexed[link.id]) {return false;}
 				this.needsUpdate = true;
@@ -61,16 +81,39 @@
 				if (link.klass) {
 					this.links[link.klass] = this.links[link.klass] || [];
 					this.links[link.klass].push(link);}
+				if (this.linkAddTriggers[link.layoutId]) {
+					this.linkAddTriggers[link.layoutId].forEach(function(callback) {callback(link);});
+					delete this.linkAddTriggers[link.layoutId];}
 				return true;},
 			getLink: function(layoutId) {return this.links.indexed[layoutId];},
 			addLinks: function(links) {this.links.forEach(this.addLink.bind(this));},
 			getLinks: function(klass) {
 				if (klass) {return this.links[klass];}
 				return this.links;},
+			// Applies function to the link immediately if it's present,
+			// otherwise it is applied when the link is added.
+			applyToLink: function(layoutId, callback) {
+				var triggers, link;
+
+				link = this.getLink(layoutId);
+				if (link) {
+					callback(link);
+					return;}
+
+				triggers = this.linkAddTriggers[layoutId];
+				if (undefined === triggers) {
+					triggers = [];
+					this.linkAddTriggers[layoutId] = triggers;}
+				triggers.push(callback);},
+			doTicks: function(count, listenerArg) {
+				var i;
+				this.tickArgument = listenerArg;
+				for (i = 0; i < count; ++i) {this.force.tick();}
+				this.tickArgument = null;},
 			onTick: function() {
 				var self = this;
 				if (this.shape) {this.shape.onTick(this);}
-				this.tickListeners.forEach(function(listener) {listener(self);});},
+				this.tickListeners.forEach(function(listener) {listener(self, self.tickArgument);});},
 			registerTickListener: function(listener) {
 				this.tickListeners.push(listener);}
 		});

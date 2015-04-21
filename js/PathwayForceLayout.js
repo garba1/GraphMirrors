@@ -52,6 +52,16 @@
 					linkDistance: 5,
 					linkStrength: 1.0});
 
+				if ('Complex' === entity.type) {
+					entity.components.forEach(function(component) {
+						self.applyToNode('entity:' + component, function(component) {
+							self.addLink({
+								source: entity, target: component,
+								id: entity.id + ':' + component.id,
+								klass: 'entity:component',
+								linkDistance: 30,
+								linkStrength: 0.2});});});}
+
 				if (entity.location) {
 					// Ensure Location.
 					node = this.getNode('location:' + entity.location);
@@ -92,16 +102,23 @@
 					// Add links to entities.
 					$.each(reaction.entities, function(entityId, direction) {
 						var link;
-						var entity = self.getNode('entity:' + entityId);
-						if (entity) {
+						var entity = self.getNode();
+						self.applyToNode('entity:' + entityId, function(entity) {
 							link = {
-								source: reaction,
-								target: entity,
+								source: direction === 'input' ? entity : reaction,
+								target: direction === 'input' ? reaction : entity,
+								reaction: reaction,
+								entity: entity,
 								klass: 'reaction:entity',
 								linkDistance: 30,
 								linkStrength: 1,
 								id: self.reactionEdgeCount++};
-							self.addLink(link);}});}
+							self.addLink(link);
+
+							// Mark as being an input or output.
+							if ('output' === direction) {entity.is_output = true;}
+							if ('input' === direction) {entity.is_input = true;}
+						});});}
 			},
 			addLink: function(link) {
 				$P.ForceLayout.prototype.addLink.call(this, link);
@@ -110,7 +127,7 @@
 				this.getNodes('entity').forEach(function(entity) {
 					var count = 0;
 					pathways.forEach(function(pathway) {
-						if (entity.pathways[pathway]) {++count;}});
+						if (entity.pathways[pathway.id]) {++count;}});
 					entity.crosstalkCount = count;
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);
 				});
