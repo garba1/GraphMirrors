@@ -14,7 +14,7 @@ c = db.cursor()
 entities = {}
 c.execute('SELECT * FROM entities WHERE entity_id in (%s)' % id_list)
 for (entity_id, _type, name, location, uniprot_id) in c:
-  entities[int(entity_id)] = {
+  entity = {
     'id': entity_id,
     'reactome_id': entity_id,
     'type': _type,
@@ -23,6 +23,7 @@ for (entity_id, _type, name, location, uniprot_id) in c:
     'location': location,
     'uniprot_id': uniprot_id,
     'pathways': {}}
+  entities[int(entity_id)] = entity
 
 if 0 == len(entities.values()):
   print('{\'error\': \'symbols unknown\'}')
@@ -38,6 +39,7 @@ for (reaction_id,) in c:
 reaction_list = ','.join([str(reaction['id']) for reaction in reactions.values()])
 
 # Grab all entities that are part of the reactions.
+complex_ids = []
 c.execute('SELECT e.entity_id, e.type, e.name, e.location, e.uniprot_id, re.reaction_id, re.direction ' +
           'FROM entities AS e INNER JOIN reaction_entities AS re ' +
           'ON e.entity_id=re.entity_id ' +
@@ -55,6 +57,8 @@ for (entity_id, _type, name, location, uniprot_id, reaction_id, direction) in c:
       'location': location,
       'uniprot_id': uniprot_id,
       'pathways': {}}
+    if _type == 'Complex':
+      complex_ids.append(entity_id)
 
 # Grab full reaction data.
 #c.execute('SELECT * FROM reactions WHERE reaction_id IN (%s)' % reaction_list)
@@ -62,6 +66,15 @@ for (entity_id, _type, name, location, uniprot_id, reaction_id, direction) in c:
 #  reaction = reactions[reaction_id]
 #  reaction['name'] = name
 #  reaction['pathways']['pathway_id'] = local_id
+
+# Grab complex molecule components
+complex_id_list = ','.join([str(c) for c in complex_ids]);
+c.execute('SELECT * FROM components WHERE entity_id IN (%s)' % complex_id_list)
+for (entity_id, component_id) in c:
+  entity = entities[int(entity_id)]
+  if 'components' not in entity:
+    entity['components'] = []
+  entity['components'].append(int(component_id))
 
 pathways = {}
 c.execute('SELECT * FROM entity_pathways WHERE entity_id IN (%s)' % id_list)
