@@ -3,10 +3,8 @@ var $P = PATHBUBBLES;
 $P.Vector2D = $P.defineClass(
 	null,
 	function Vector2D(x, y) {
-		if (!(this instanceof Vector2D)) {return new Vector2D(x, y);}
 		$P.readonly(this, 'x', x);
-		$P.readonly(this, 'y', y);
-		return this;},
+		$P.readonly(this, 'y', y);},
 	{
 		get length() {
 			if (!this._length) {
@@ -15,7 +13,6 @@ $P.Vector2D = $P.defineClass(
 			return this._length;},
 		angle: function() {return Math.atan2(this.y, this.x);},
 		plus: function(vector) {return new $P.Vector2D(this.x + vector.x, this.y + vector.y);},
-		minus: function(vector) {return new $P.Vector2D(this.x - vector.x, this.y - vector.y);},
 		times: function(scalar) {return new $P.Vector2D(this.x * scalar, this.y * scalar);},
 		normalized: function() {
 			return new $P.Vector2D(this.x / this.length, this.y / this.length);},
