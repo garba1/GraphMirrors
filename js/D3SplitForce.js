@@ -23,21 +23,17 @@
 			this.updateSvgPosition();
 		},
 		{
-			get expression() {return this._expression;},
-			set expression(value) {
-				if (this._expression === value) {return;}
-				this._expression = value;
-				if (!value) {return;}},
-
-			getExpressionColor: function(symbol) {
-				if ('up' === this._expression[symbol]) {return 'yellow';}
-				if ('down' === this._expression[symbol]) {return 'cyan';}
+			getExpressionColor: function(pathwayIndex, symbol) {
+				if ('up' === this.expression[symbol]) {return 'yellow';}
+				if ('down' === this.expression[symbol]) {return 'cyan';}
 				return 'white';},
 
-			addPathway: function(pathwayId, pathwayName) {
+			addPathway: function(pathwayId, pathwayName, expressions) {
 				var self = this;
 				function onFinish() {
-					self.pathways.push({id: pathwayId, name: pathwayName});
+					self.layout.consolidateConverted();
+					//self.layout.consolidateReactions();
+					self.pathways.push({id: pathwayId, name: pathwayName, expressions: expressions});
 					self.svg.remove();
 					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 					self.svg.main = self.svg.append('g').attr('id', 'main');

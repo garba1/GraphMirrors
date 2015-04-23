@@ -23,19 +23,37 @@
 				.attr('height', 40)
 				.attr('pointer-events', 'none');*/
 
+			function nodeSize(target) {
+				return function(d) {
+					var size = 1;
+					if (d.componentNodes && d.componentNodes.length) {
+						size = Math.pow(d.componentNodes.length, 0.4);}
+					return target * size;};}
+
+			function nodeTitle(d) {
+				var title = d.name;
+				if (d.componentNodes) {
+					title = [d.name, ':'];
+					d.componentNodes.forEach(function(node) {
+						if (!node || !node.name) {return;}
+						title.push('\n');
+						title.push(node.name);});
+					title = title.join('');}
+				return title;}
+
 			nodes = self.layout.nodes;
+			console.log(self.pathway);
 			// Filter nodes by pathway.
 			if (self.pathway) {
 				nodes = nodes.filter(function(node) {
 					if ('entity' === node.klass) {
-						return node.pathways[self.pathway.id];}
+						return node.pathways[parseInt(self.pathway.id)];}
 					if ('entityLabel' === node.klass) {
-						return self.layout.getNode('entity:'+node.id).pathways[self.pathway.id];}
+						return self.layout.getNode('entity:'+node.id).pathways[parseInt(self.pathway.id)];}
 					return true;});}
 
 			// Filter links by exsiting nodes.
 			nodes.indexed = $P.indexBy(nodes, $P.getter('layoutId'));
-			console.log(nodes.indexed);
 			links = self.layout.links.filter(function(link) {
 				return nodes.indexed[link.source.layoutId]
 					|| nodes.indexed[link.target.layoutId];});
@@ -94,15 +112,18 @@
 			self.reactions.append('rect')
 				.attr('stroke', 'black')
 				.attr('fill', 'red')
-				.attr('width', 5).attr('height', 5)
-				.attr('x', -2.5).attr('y', -2.5)
+				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
+				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {console.log(d);})
-				.append('title').text(function(d) {return d.name;});
+				.append('title').text(nodeTitle);
 			self.entities = self.nodes.filter(function(d, i) {return 'entity' === d.klass;});
 			self.entities.proteins = self.entities.filter(function(d, i) {return 'Protein' == d.type;});
 			self.entities.proteins.focused = self.entities.proteins.filter(
 				function(d, i) {return nodes.indexed[d.layoutId];});
+			self.entities.proteins.composite = self.entities.proteins.filter(
+				function(d, i) {return d.componentNodes;});
+			console.log('COMPOSITE', self.entities.proteins.composite);
 			self.entities.proteins.unfocused = self.entities.proteins.filter(
 				function(d, i) {return !nodes.indexed[d.layoutId];});
 			self.entities.proteins.crosstalking = self.entities.proteins.filter(
@@ -143,56 +164,70 @@
 				.attr('stroke', 'black')
 				.attr('fill', 'gray')
 				.attr('transform', textTransform)
-				.attr('width', 14).attr('height', 10)
-				.attr('x', -7).attr('y', -5)
-				.attr('rx', 3).attr('ry', 3);
+				.attr('width', nodeSize(14)).attr('height', nodeSize(10))
+				.attr('x', nodeSize(-7)).attr('y', nodeSize(-5))
+				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3));
 			// The main circle.
 			self.entities.proteins.focused
 				.append('rect')
 				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor)
-				.attr('width', 12).attr('height', 8)
-				.attr('x', -6).attr('y', -4)
-				.attr('rx', 3).attr('ry', 3)
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('width', nodeSize(12)).attr('height', nodeSize(8))
+				.attr('x', nodeSize(-6)).attr('y', nodeSize(-4))
+				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3))
 				.attr('pointer-events', 'all')
 				.attr('transform', textTransform)
 				.on('click', function(d) {console.log(d);})
-				.append('title').text(function(d) {return d.name;});
+				.append('title').text(nodeTitle);
+			self.entities.proteins.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
+				.append('circle')
+				.attr('stroke', 'black')
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('r', function(d, i) {return nodeSize(3)(d3.select(this.parentNode).datum());})
+				.attr('transform', function(d, i) {
+					var pd = d3.select(this.parentNode).datum();
+					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';
+				})
+				.attr('pointer-events', 'all')
+				.on('click', function(d) {console.log(d);})
+				.append('title').text(nodeTitle);
 			// Nodes not in the pathway.
 			self.entities.proteins.unfocused
 				.append('rect')
 				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor)
+				.attr('fill', self.getExpressionColor.bind(self))
 				.attr('width', 6).attr('height', 3)
 				.attr('x', -3).attr('y', -1.5)
 				.attr('rx', 1).attr('ry', 1)
 				.attr('transform', textTransform)
 				.on('click', function(d) {console.log(d);})
-				.append('title').text(function(d) {return d.name;});
+				.append('title').text(nodeTitle);
 			// Small Molecules.
 			self.entities.small
 				.append('circle')
 				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor)
-				.attr('r', 5)
-				.attr('x', -2.5)
-				.attr('y', -2.5)
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('r', nodeSize(5))
+				.attr('x', nodeSize(-2.5))
+				.attr('y', nodeSize(-2.5))
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {console.log(d);})
-				.append('title').text(function(d) {return d.name;});
+				.append('title').text(nodeTitle);
 			// Complex.
 			self.entities.complex
 				.append('rect')
 				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor)
-				.attr('width', 10).attr('height', 10)
-				.attr('x', -5).attr('y', -5)
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('width', nodeSize(10)).attr('height', nodeSize(10))
+				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
 				.attr('transform', textTransform + 'rotate(45)')
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {console.log(d);})
-				.append('title').text(function(d) {return d.name;});
+				.append('title').text(nodeTitle);
+
 			self.entityLabels = self.nodes.filter(
 				function(d, i) {return 'entitylabel' === d.klass
+								 && self.layout.getNode('entity:'+d.id)
 								 && nodes.indexed[self.layout.getNode('entity:'+d.id).layoutId];});
 			self.entityLabels.append('text')
 				.style('font-size', '12px')
@@ -219,9 +254,8 @@
 		},
 		{
 			getExpressionColor: function(node) {
-				return 'white';
-				if ('up' === this._expression[symbol]) {return 'yellow';}
-				if ('down' === this._expression[symbol]) {return 'cyan';}
+				if ('up' === this.pathway.expressions[node.name]) {return 'yellow';}
+				if ('down' === this.pathway.expressions[node.name]) {return 'cyan';}
 				return 'white';}
 		});
 })(PATHBUBBLES);

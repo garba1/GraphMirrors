@@ -10,7 +10,6 @@
 			this._mode = 'none';
 			this.drag = this.force.drag()
 				.on('dragstart', function() {
-					console.log('DRAGSTART');
 					d3.event.sourceEvent.stopPropagation();})
 				.on('drag.force', function(d) {
 					d.px = d3.event.x;
@@ -28,7 +27,7 @@
 				if (value === this._mode) {return;}
 				this._mode = value;},
 			addNode: function(node) {
-				$P.ForceLayout.prototype.addNode.call(this, node);
+				if (!$P.ForceLayout.prototype.addNode.call(this, node)) {return null;}
 				if ('entity' === node.klass) {this.onAddEntity(node);}
 				if ('reaction' === node.klass) {this.onAddReaction(node);}
 				return node;},
@@ -36,6 +35,7 @@
 				var self = this, node, link;
 
 				entity.charge = -100;
+				entity.reactions = [];
 
 				// Add label.
 				node = this.addNode({
@@ -52,6 +52,7 @@
 					linkDistance: 5,
 					linkStrength: 1.0});
 
+				/*
 				if ('Complex' === entity.type) {
 					entity.components.forEach(function(component) {
 						self.applyToNode('entity:' + component, function(component) {
@@ -61,6 +62,7 @@
 								klass: 'entity:component',
 								linkDistance: 30,
 								linkStrength: 0.2});});});}
+				 */
 
 				if (entity.location) {
 					// Ensure Location.
@@ -115,6 +117,8 @@
 								id: self.reactionEdgeCount++};
 							self.addLink(link);
 
+							entity.reactions.push(reaction);
+
 							// Mark as being an input or output.
 							if ('output' === direction) {entity.is_output = true;}
 							if ('input' === direction) {entity.is_input = true;}
@@ -130,7 +134,37 @@
 						if (entity.pathways[pathway.id]) {++count;}});
 					entity.crosstalkCount = count;
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);
+				});},
+			consolidateConverted: function() {
+				var self = this;
+				self.getNodes('entity').forEach(function(entity) {
+					var components = [];
+					if (entity.components) {
+						$.each(entity.components, function(component_id, component_type) {
+							if ('converted' === component_type) {
+								components.push('entity:' + component_id);}});
+						self.groupNodes(entity, components);
+					}
 				});
+				self.getLinks('reaction:entity').forEach(function(link) {
+					// remove links?
+				});},
+			consolidateReactions: function() {
+				var self = this,
+						reactions = this.getNodes('reaction'),
+						consolidated = $P.MultiMap();
+				function hash(reaction) {
+					var value = [];
+					Object.keys(reaction.entities).sort().forEach(function(key) {
+						value.push(key);
+						value.push(reaction.entities[key]);});
+					return value.join('|');}
+				reactions.forEach(function(reaction) {
+					consolidated.add(hash(reaction), reaction);});
+				consolidated.forEach(function(hash, reactions) {
+					var first = reactions.splice(0, 1)[0],
+							rest = reactions.map($P.getter('layoutId'));
+					self.groupNodes(first, rest);});
 			}
 		});
 })(PATHBUBBLES);

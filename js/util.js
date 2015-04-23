@@ -215,6 +215,25 @@ $P.asyncOrdered = function(callbacks) {
 				return values;}
 		});
 
+	$P.MultiMap = $P.defineClass(
+		null,
+		function MultiMap() {
+			if (!(this instanceof MultiMap)) {return new MultiMap();}
+			this.data = {};
+			return this;},
+		{
+			get: function(key) {
+				var value = this.data[key];
+				if (!value) {
+					value = [];
+					this.data[key] = value;}
+				return value;},
+			add: function(key, value) {
+				this.get(key).push(value);},
+			// takes key, values array.
+			forEach: function(f) {$.each(this.data, f);}
+		});
+
 	/**
 	 * Turn a list into a map indexed by f.
 	 */
