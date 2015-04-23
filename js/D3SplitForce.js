@@ -117,11 +117,17 @@
 				$P.HtmlObject.prototype.drawSelf.call(this, context, scale, args);},
 
 			onTick: function(layout, args) {
+				var self = this;
 				args = args || {};
 				if (args.no_display) {return;}
 
 				this.svg.selectAll('.node').attr('transform', function(d) {
 					return 'translate(' + d.x + ',' + d.y + ')';});
+
+				this.svg.selectAll('.follower').attr('transform', function(d) {
+					var follow = d3.select(this).attr('follow-id');
+					var node = self.layout.getNode(follow);
+					return 'translate(' + node.x + ',' + node.y + ')';});
 
 				// Undirected Links.
 				this.svg.selectAll('.link line')

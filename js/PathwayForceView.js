@@ -58,6 +58,8 @@
 				return nodes.indexed[link.source.layoutId]
 					|| nodes.indexed[link.target.layoutId];});
 
+			self.drawBackground = self.element.append('g').attr('class', 'layer').attr('pointer-events', 'none');
+
 			self.links = self.element.selectAll('.link').data(links)
 				.enter().append('g').attr('class', 'link');
 			// Display /all/ nodes, not just filtered ones. They're just displayed differently.
@@ -133,30 +135,42 @@
 			self.entities.complex = self.entities.filter(
 				function(d, i) {return 'Complex' == d.type;});
 			// The big transparent background circles encoding location.
-			self.entities.proteins.focused.append('circle')
-				.attr('stroke', 'none')
-				.attr('fill', function(entity) {return self.layout.getNode('location:'+entity.location).color;})
-				.attr('fill-opacity', 0.15)
-				.attr('pointer-events', 'none') // Can't click on them.
-				.attr('r', 60);
-			self.entities.proteins.unfocused.append('circle')
-				.attr('stroke', 'none')
-				.attr('fill', function(entity) {return self.layout.getNode('location:'+entity.location).color;})
-				.attr('fill-opacity', 0.05)
-				.attr('pointer-events', 'none') // Can't click on them.
-				.attr('r', 60);
-			self.entities.small
-				.attr('stroke', 'none')
-				.attr('fill', function(entity) {return self.layout.getNode('location:'+entity.location).color;})
-				.attr('fill-opacity', 0.15)
-				.attr('pointer-events', 'none') // Can't click on them.
-				.attr('r', 60);
-			self.entities.complex
-				.attr('stroke', 'none')
-				.attr('fill', function(entity) {return self.layout.getNode('location:'+entity.location).color;})
-				.attr('fill-opacity', 0.15)
-				.attr('pointer-events', 'none') // Can't click on them.
-				.attr('r', 60);
+			self.entities.proteins.focused.each(function(d, i) {
+				self.drawBackground.append('circle')
+					.attr('class', 'follower')
+					.attr('follow-id', d.layoutId)
+					.attr('stroke', 'none')
+					.attr('fill', self.layout.getNode('location:'+d.location).color)
+					.attr('fill-opacity', 0.15)
+					.attr('pointer-events', 'none') // Can't click on them.
+					.attr('r', 60);});
+			self.entities.proteins.unfocused.each(function(d, i) {
+				self.drawBackground.append('circle')
+					.attr('class', 'follower')
+					.attr('follow-id', d.layoutId)
+					.attr('stroke', 'none')
+					.attr('fill', self.layout.getNode('location:'+d.location).color)
+					.attr('fill-opacity', 0.05)
+					.attr('pointer-events', 'none') // Can't click on them.
+					.attr('r', 60);});
+			self.entities.small.each(function(d, i) {
+				self.drawBackground.append('circle')
+					.attr('class', 'follower')
+					.attr('follow-id', d.layoutId)
+					.attr('stroke', 'none')
+					.attr('fill', self.layout.getNode('location:'+d.location).color)
+					.attr('fill-opacity', 0.15)
+					.attr('pointer-events', 'none') // Can't click on them.
+					.attr('r', 60);});
+			self.entities.complex.each(function(d, i) {
+				self.drawBackground.append('circle')
+					.attr('class', 'follower')
+					.attr('follow-id', d.layoutId)
+					.attr('stroke', 'none')
+					.attr('fill', self.layout.getNode('location:'+d.location).color)
+					.attr('fill-opacity', 0.15)
+					.attr('pointer-events', 'none') // Can't click on them.
+					.attr('r', 60);});
 			// Nodes in the pathway.
 			// An extra box indicating crosstalk.
 			self.entities.proteins.crosstalking
