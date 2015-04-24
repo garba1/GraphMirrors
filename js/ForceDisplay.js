@@ -41,6 +41,7 @@
 					layout: this.layout,
 					shape: this.shape,
 					displayArgument: config.viewArgs[i],
+					viewCount: this.viewCount,
 					index: i});
 				this.views.push(view);}
 

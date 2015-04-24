@@ -31,7 +31,7 @@
 			addPathway: function(pathwayId, pathwayName, expressions) {
 				var self = this;
 				function onFinish() {
-					self.layout.consolidateConverted();
+					self.layout.consolidateComposite();
 					//self.layout.consolidateReactions();
 					self.pathways.push({id: pathwayId, name: pathwayName, expressions: expressions});
 					self.svg.remove();
@@ -43,6 +43,7 @@
 					if (2 === self.pathways.length) {self.layoutMirror();}
 					if (2 < self.pathways.length) {self.layoutRadial();}
 					self.updateSvgPosition();
+					console.log(self.layout.force);
 					self.layout.force.start();
 					//self.layout.doTicks(10, {no_display: true});
 					// TODO: Auto zoom out?

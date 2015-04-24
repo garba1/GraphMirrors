@@ -13,6 +13,7 @@
 			textTransform = self.shape.textTransform(self);
 
 			self.pathway = config.displayArgument || null;
+			console.log(self.pathway);
 
 			// Center Mark.
 			/*self.element.append('rect')
@@ -24,6 +25,7 @@
 				.attr('pointer-events', 'none');*/
 
 			function nodeSize(target) {
+				return function(d) {return target * 1.5;};
 				return function(d) {
 					var size = 1;
 					if (d.componentNodes && d.componentNodes.length) {
@@ -41,29 +43,57 @@
 					title = title.join('');}
 				return title;}
 
-			nodes = self.layout.nodes;
-			console.log(self.pathway);
-			// Filter nodes by pathway.
-			if (self.pathway) {
-				nodes = nodes.filter(function(node) {
-					if ('entity' === node.klass) {
-						return node.pathways[parseInt(self.pathway.id)];}
-					if ('entityLabel' === node.klass) {
-						return self.layout.getNode('entity:'+node.id).pathways[parseInt(self.pathway.id)];}
-					return true;});}
+			function entityFilter(node) {
+				if ('entity' !== node.klass) {return false;}
+				if (node.pathways && !node.pathways[parseInt(self.pathway.id)]) {return false;}
+				if (node.reactions && node.reactions.length > 0) {return true;}
+				if (node.componentNodes && $P.or(node.componentNodes, entityFilter)) {return true;}
+				return false;}
 
-			// Filter links by exsiting nodes.
-			nodes.indexed = $P.indexBy(nodes, $P.getter('layoutId'));
-			links = self.layout.links.filter(function(link) {
-				return nodes.indexed[link.source.layoutId]
-					|| nodes.indexed[link.target.layoutId];});
+			function entitylabelFilter(node) {
+				if ('entitylabel' !== node.klass) {return false;}
+				return self.visibleEntities.indexed['entity:'+node.id];}
+
+			function reactionFilter(node) {
+				var i, entities;
+				if ('reaction' !== node.klass) {return false;}
+				entities = Object.keys(node.entities);
+				for (i = 0; i < entities.length; ++i) {
+					if (self.visibleEntities.indexed['entity:'+entities[i]]) {
+						return true;}}
+				return false;}
+
+			function locationFilter(node) {
+				if ('location' !== node.klass) {return false;}
+				return $P.or(self.visibleEntities, function(entity) {return entity.location === node.id;});}
+
+			function isNodeVisible(node) {
+				if (!node) {return false;}
+				var id = node.layoutId;
+				return self.visibleEntities.indexed[id]
+					|| self.visibleEntitylabels.indexed[id]
+					|| self.visibleReactions.indexed[id]
+					|| self.visibleLocations.indexed[id];}
+
+			self.visibleEntities = self.layout.nodes.filter(entityFilter);
+			self.visibleEntities.indexed = $P.indexBy(self.visibleEntities, $P.getter('layoutId'));
+			self.visibleEntitylabels = self.layout.nodes.filter(entitylabelFilter);
+			self.visibleEntitylabels.indexed = $P.indexBy(self.visibleEntitylabels, $P.getter('layoutId'));
+			self.visibleReactions = self.layout.nodes.filter(reactionFilter);
+			self.visibleReactions.indexed = $P.indexBy(self.visibleReactions, $P.getter('layoutId'));
+			self.visibleLocations = self.layout.nodes.filter(locationFilter);
+			self.visibleLocations.indexed = $P.indexBy(self.visibleLocations, $P.getter('layoutId'));
+			self.visibleNodes = [].concat(self.visibleEntities, self.visibleEntitylabels, self.visibleReactions, self.visibleLocations);
+
+			self.visibleLinks = self.layout.links.filter(function(link) {
+				//if (link.klass === 'entity:label') {console.log(link, link.source, link.target, isNodeVisible(link.source),  isNodeVisible(link.target));}
+				return link.source && link.target && isNodeVisible(link.source) && isNodeVisible(link.target);});
 
 			self.drawBackground = self.element.append('g').attr('class', 'layer').attr('pointer-events', 'none');
 
-			self.links = self.element.selectAll('.link').data(links)
+			self.links = self.element.selectAll('.link').data(self.visibleLinks)
 				.enter().append('g').attr('class', 'link');
-			// Display /all/ nodes, not just filtered ones. They're just displayed differently.
-			self.nodes = self.element.selectAll('.node').data(self.layout.nodes)
+			self.nodes = self.element.selectAll('.node').data(self.visibleNodes)
 				.enter().append('g').attr('class', 'node');
 			self.nodes.call(self.layout.drag);
 
@@ -89,9 +119,10 @@
 				.attr('stroke-width', 0)
 				.attr('stroke-opacity', 0)
 				.attr('fill', 'black')
-				.attr('source-width', 8)
+				.attr('source-width', 5)
 				.attr('target-width', 1)
-				.attr('opacity', 0.5);
+				.attr('opacity', 0.3);
+			/*
 			self.componentLinks = self.links.filter(
 				function(d, i) {return 'entity:component' === d.klass;});
 			self.componentLinks.notOutput = self.componentLinks.filter(
@@ -104,6 +135,7 @@
 			self.componentLinks.output.append('line')
 				.attr('stroke', 'black')
 				.attr('stroke-width', 1);
+			 */
 			self.locationLinks = self.links.filter(
 				function(d, i) {return 'entity:location' === d.klass;});
 			self.locationLinks.append('line')
@@ -121,56 +153,60 @@
 				.append('title').text(nodeTitle);
 			self.entities = self.nodes.filter(function(d, i) {return 'entity' === d.klass;});
 			self.entities.proteins = self.entities.filter(function(d, i) {return 'Protein' == d.type;});
-			self.entities.proteins.focused = self.entities.proteins.filter(
-				function(d, i) {return nodes.indexed[d.layoutId];});
 			self.entities.proteins.composite = self.entities.proteins.filter(
 				function(d, i) {return d.componentNodes;});
-			console.log('COMPOSITE', self.entities.proteins.composite);
-			self.entities.proteins.unfocused = self.entities.proteins.filter(
-				function(d, i) {return !nodes.indexed[d.layoutId];});
 			self.entities.proteins.crosstalking = self.entities.proteins.filter(
 				function(d, i) {return d.crosstalkCount > 1;});
 			self.entities.small = self.entities.filter(
 				function(d, i) {return 'SmallMolecule' == d.type;});
 			self.entities.complex = self.entities.filter(
 				function(d, i) {return 'Complex' == d.type;});
+			self.entities.complex.composite = self.entities.complex.filter(
+				function(d, i) {return d.componentNodes;});
+			self.entities.other = self.entities.filter(
+				function(d, i) {
+					return 'Complex' !== d.type
+						&& 'SmallMolecule' !== d.type
+						&& 'Protein' !== d.type;});
 			// The big transparent background circles encoding location.
-			self.entities.proteins.focused.each(function(d, i) {
+			self.entities.other.composite = self.entities.other.filter(
+				function(d, i) {return d.componentNodes;});
+			self.entities.proteins.each(function(d, i) {
 				self.drawBackground.append('circle')
 					.attr('class', 'follower')
 					.attr('follow-id', d.layoutId)
 					.attr('stroke', 'none')
 					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.15)
+					.attr('fill-opacity', 0.25)
 					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 60);});
-			self.entities.proteins.unfocused.each(function(d, i) {
-				self.drawBackground.append('circle')
-					.attr('class', 'follower')
-					.attr('follow-id', d.layoutId)
-					.attr('stroke', 'none')
-					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.05)
-					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 60);});
+					.attr('r', 100);});
 			self.entities.small.each(function(d, i) {
 				self.drawBackground.append('circle')
 					.attr('class', 'follower')
 					.attr('follow-id', d.layoutId)
 					.attr('stroke', 'none')
 					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.15)
+					.attr('fill-opacity', 0.25)
 					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 60);});
+					.attr('r', 100);});
 			self.entities.complex.each(function(d, i) {
 				self.drawBackground.append('circle')
 					.attr('class', 'follower')
 					.attr('follow-id', d.layoutId)
 					.attr('stroke', 'none')
 					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.15)
+					.attr('fill-opacity', 0.25)
 					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 60);});
+					.attr('r', 100);});
+			self.entities.other.each(function(d, i) {
+				self.drawBackground.append('circle')
+					.attr('class', 'follower')
+					.attr('follow-id', d.layoutId)
+					.attr('stroke', 'none')
+					.attr('fill', self.layout.getNode('location:'+d.location).color)
+					.attr('fill-opacity', 0.25)
+					.attr('pointer-events', 'none') // Can't click on them.
+					.attr('r', 100);});
 			// Nodes in the pathway.
 			// An extra box indicating crosstalk.
 			self.entities.proteins.crosstalking
@@ -182,7 +218,7 @@
 				.attr('x', nodeSize(-7)).attr('y', nodeSize(-5))
 				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3));
 			// The main circle.
-			self.entities.proteins.focused
+			self.entities.proteins
 				.append('rect')
 				.attr('stroke', 'black')
 				.attr('fill', self.getExpressionColor.bind(self))
@@ -203,17 +239,6 @@
 					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';
 				})
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
-				.append('title').text(nodeTitle);
-			// Nodes not in the pathway.
-			self.entities.proteins.unfocused
-				.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor.bind(self))
-				.attr('width', 6).attr('height', 3)
-				.attr('x', -3).attr('y', -1.5)
-				.attr('rx', 1).attr('ry', 1)
-				.attr('transform', textTransform)
 				.on('click', function(d) {console.log(d);})
 				.append('title').text(nodeTitle);
 			// Small Molecules.
@@ -238,38 +263,82 @@
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {console.log(d);})
 				.append('title').text(nodeTitle);
+			self.entities.complex.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
+				.append('circle')
+				.attr('stroke', 'black')
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('r', function(d, i) {return nodeSize(3)(d3.select(this.parentNode).datum());})
+				.attr('transform', function(d, i) {
+					var pd = d3.select(this.parentNode).datum();
+					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';})
+				.attr('pointer-events', 'all')
+				.on('click', function(d) {console.log(d);})
+				.append('title').text(nodeTitle);
+
+			// Other
+			self.entities.other
+				.append('rect')
+				.attr('stroke', 'black')
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('width', nodeSize(10)).attr('height', nodeSize(10))
+				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
+				.attr('transform', textTransform)
+				.attr('pointer-events', 'all')
+				.on('click', function(d) {console.log(d);})
+				.append('title').text(nodeTitle);
+			self.entities.complex.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
+				.append('circle')
+				.attr('stroke', 'black')
+				.attr('fill', self.getExpressionColor.bind(self))
+				.attr('r', function(d, i) {return nodeSize(3)(d3.select(this.parentNode).datum());})
+				.attr('transform', function(d, i) {
+					var pd = d3.select(this.parentNode).datum();
+					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';})
+				.attr('pointer-events', 'all')
+				.on('click', function(d) {console.log(d);})
+				.append('title').text(nodeTitle);
 
 			self.entityLabels = self.nodes.filter(
-				function(d, i) {return 'entitylabel' === d.klass
-								 && self.layout.getNode('entity:'+d.id)
-								 && nodes.indexed[self.layout.getNode('entity:'+d.id).layoutId];});
+				function(d, i) {return 'entitylabel' === d.klass;});
 			self.entityLabels.append('text')
 				.style('font-size', '12px')
 				.attr('text-anchor', 'middle')
 				.attr('fill', 'black')
 				.attr('transform', self.shape.textTransform(self))
+				.attr('pointer-events', 'none')
 				.text($P.getter('name'));
 			self.entityLabelLinks = self.links.filter(
-				function(d, i) {return 'entity:label' === d.klass && nodes.indexed[d.source.layoutId];});
+				function(d, i) {return 'entity:label' === d.klass;});
 			self.entityLabelLinks.append('line')
 				.attr('stroke', 'black')
 				.attr('stroke-width', 1)
 				.attr('stroke-opacity', 0.2)
 				.attr('fill', 'none');
 
-			self.element.append('text')
-				.style('font-size', '24px')
+			self.label = self.root.append('text')
+				.style('font-size', '14px')
+				.style('font-weight', 'bold')
 				.attr('fill', 'black')
 				.attr('text-anchor', 'middle')
-				.attr('opacity', 0.6)
-				.attr('transform', self.shape.textTransform(self))
+				.attr('dominant-baseline', 'middle')
+				.attr('opacity', 1.0)
 				.text(self.pathway.name);
+
 
 		},
 		{
+			getExpression: function(node) {return this.pathway.expressions[node.name];},
 			getExpressionColor: function(node) {
-				if ('up' === this.pathway.expressions[node.name]) {return 'yellow';}
-				if ('down' === this.pathway.expressions[node.name]) {return 'cyan';}
-				return 'white';}
+				if ('up' === this.pathway.expressions[node.name]) {return '#CCCC00';}
+				if ('down' === this.pathway.expressions[node.name]) {return '#0000CC';}
+				return 'white';},
+			onShapeChange: function() {
+				$P.ForceView.prototype.onShapeChange.call(this);
+				if (this.label) {
+					var center = this.shape.getLabelPosition(this, 14),
+							angle = center.rotation || 0;
+					this.label.style('font-size', Math.min(14, center.length / this.pathway.name.length * 1.5) + 'px');
+					this.label.attr('transform', 'translate(' + center.x + ',' + center.y + ')rotate(' + angle + ')');}
+			}
 		});
 })(PATHBUBBLES);

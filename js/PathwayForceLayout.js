@@ -21,7 +21,20 @@
 			this.nextLocationColor = 0;
 		},
 		{
-			locationColors: ['red', 'green', 'blue', 'orange', 'yellow', 'purple', 'teal', 'gray'],
+			//locationColors: ['red', 'green', 'blue', 'orange', 'yellow', 'purple', 'teal', 'gray'],
+			locationColors: [
+				'#8dd3c7',
+				'#ffffb3',
+				'#bebada',
+				'#fb8072',
+				'#80b1d3',
+				'#fdb462',
+				'#b3de69',
+				'#fccde5',
+				'#d9d9d9',
+				'#bc80bd',
+				'#ccebc5',
+				'#ffed6f'],
 			get mode() {return this._mode;},
 			set mode(value) {
 				if (value === this._mode) {return;}
@@ -34,7 +47,13 @@
 			onAddEntity: function(entity) {
 				var self = this, node, link;
 
-				entity.charge = -100;
+				function nodeSize(target, d) {
+					var size = 1;
+					if (d.componentNodes && d.componentNodes.length) {
+						size = Math.pow(d.componentNodes.length, 0.4);}
+					return target * size;}
+
+				entity.charge = nodeSize(-100, entity);
 				entity.reactions = [];
 
 				// Add label.
@@ -44,13 +63,13 @@
 					klass: 'entitylabel',
 					x: 0, y: 0,
 					charge: 0});
-
-				this.addLink({
-					source: entity, target: node,
-					id: entity.id,
-					klass: 'entity:label',
-					linkDistance: 5,
-					linkStrength: 1.0});
+				if (node) {
+					this.addLink({
+						source: entity, target: node,
+						id: entity.id,
+						klass: 'entity:label',
+						linkDistance: 5,
+						linkStrength: 1.0});}
 
 				/*
 				if ('Complex' === entity.type) {
@@ -74,19 +93,26 @@
 							klass: 'location',
 							entities: [],
 							color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
-							charge: -25,
+							gravityMultiplier: 3,
+							charge: -120,
 							x: 0, y: 0};
 						this.addNode(node);
 
 						// Add links between locations to separate them.
+						/*
 						this.getNodes('location').forEach(function(other) {
 							if (node === other) {return;}
 							self.addLink({
 								source: node, target: other,
 								id: node.id + '|' + other.id,
 								klass: 'location:location:',
-								linkDistance: 200,
-								linkStrength: 0.05});});}
+								linkStrength: 0.01});});
+						var count = this.getNodes('location').length;
+						this.getLinks('location:location').forEach(function(link) {
+							link.linkDistance = 50 + 15 * count;});
+						 */
+					}
+
 					node.entities.push(entity);
 
 					// Add link from location to entity.
@@ -117,6 +143,7 @@
 								id: self.reactionEdgeCount++};
 							self.addLink(link);
 
+							if (!entity.reactions) {entity.reactions = [];}
 							entity.reactions.push(reaction);
 
 							// Mark as being an input or output.
@@ -124,6 +151,13 @@
 							if ('input' === direction) {entity.is_input = true;}
 						});});}
 			},
+			/*removeNode: function(layoutId) {
+				var node = this.getNode(layoutId);
+				if (!$P.ForceLayout.prototype.removeNode.call(this, layoutId)) {return;};
+				if ('entity' === node.klass) {
+					this.removeNode('entitylabel:' + this.id);
+					this.removeLink('entity:location:' + this.id);
+					this.removeLink('entity:label:' + this.id);}},*/
 			addLink: function(link) {
 				$P.ForceLayout.prototype.addLink.call(this, link);
 				return link;},
@@ -135,19 +169,17 @@
 					entity.crosstalkCount = count;
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);
 				});},
-			consolidateConverted: function() {
+			consolidateComposite: function() {
 				var self = this;
 				self.getNodes('entity').forEach(function(entity) {
 					var components = [];
 					if (entity.components) {
 						$.each(entity.components, function(component_id, component_type) {
-							if ('converted' === component_type) {
-								components.push('entity:' + component_id);}});
+							components.push('entity:' + component_id);});
 						self.groupNodes(entity, components);
-					}
-				});
-				self.getLinks('reaction:entity').forEach(function(link) {
-					// remove links?
+						self.getLinks('entity:location')
+							.filter(function(link) {return link.source === entity || link.target === entity;})
+							.slice(1).forEach(function(link) {self.removeLink(link.layoutId);});}
 				});},
 			consolidateReactions: function() {
 				var self = this,
