@@ -371,7 +371,7 @@
 							result = $P.state.scene.sendEvent(event);
 
 							if (!result) {
-								force = new $P.SplitForce({x: x, y: y, w: 600, h: 600});
+								force = new $P.SplitForce({x: x, y: y, w: 750, h: 600});
 								$P.state.scene.add(force);
 								force.receiveEvent(event);}
 

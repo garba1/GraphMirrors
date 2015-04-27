@@ -20,6 +20,8 @@
 			this.layout.gravity = 0.03;
 			this.pathways = [];
 
+			this.legendWidth = config.legendWidth || 120;
+
 			this.updateSvgPosition();
 		},
 		{
@@ -38,6 +40,10 @@
 					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 					self.svg.main = self.svg.append('g').attr('id', 'main');
 					self.svg.defs = self.svg.append('defs');
+
+					if (self.legend) {self.legend.remove();}
+					self.createLegend();
+
 					self.layout.setPathways(self.pathways);
 					if (1 === self.pathways.length) {self.layoutSingle();}
 					if (2 === self.pathways.length) {self.layoutMirror();}
@@ -92,11 +98,160 @@
 				if ((dw && dw !== 0) || (dh && dh !== 0)) {this.layout.force.start();}
 				this.updateSvgPosition();},
 
+			createLegend: function() {
+				this.legend = d3.select(this.element).append('svg').attr('class', 'legend');
+
+				this.legend.append('line')
+					.attr('stroke', 'black')
+					.attr('stroke-width', 3)
+					.attr('x1', 0).attr('y1', 0)
+					.attr('x2', 0).attr('y2', this.h);
+
+				var textX = 20;
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 20)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Protein');
+
+				this.legend.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'white')
+					.attr('x', 90).attr('y', 20 - 7)
+					.attr('width', 18).attr('height', 12)
+					.attr('rx', 4.5).attr('ry', 4.5);
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 44)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Small');
+
+				this.legend.append('circle')
+					.attr('stroke', 'black')
+					.attr('fill', 'white')
+					.attr('r', 7.5)
+					.attr('transform', 'translate(98, 43)');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 68)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Complex');
+
+				this.legend.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'white')
+					.attr('width', 15).attr('height', 15)
+					.attr('transform', 'translate(98,57)rotate(45)');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 92)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Other');
+
+				this.legend.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'white')
+					.attr('width', 15).attr('height', 15)
+					.attr('transform', 'translate(90, 85)');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 116)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Expression:');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX + 12)
+					.attr('y', 135)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Up');
+
+				this.legend.append('circle')
+					.attr('stroke', 'black')
+					.attr('fill', '#CCCC00')
+					.attr('r', 7.5)
+					.attr('transform', 'translate(98, 135)');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX + 12)
+					.attr('y', 154)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Down');
+
+				this.legend.append('circle')
+					.attr('stroke', 'black')
+					.attr('fill', '#0000CC')
+					.attr('r', 7.5)
+					.attr('transform', 'translate(98, 154)');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 174)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Reaction');
+
+				this.legend.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'red')
+					.attr('width', 7.5).attr('height', 7.5)
+					.attr('transform', 'translate(94, 170)');
+
+				this.legend.append('text')
+					.style('font-size', '14px')
+					.attr('x', textX)
+					.attr('y', 194)
+					.attr('fill', 'black')
+					.attr('dominant-baseline', 'middle')
+					.text('Crosstalk');
+
+				this.legend.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'gray')
+					.attr('width', 21).attr('height', 15)
+					.attr('x', 88.5).attr('y', 186)
+					.attr('rx', 4.5).attr('ry', 4.5);
+
+				this.legend.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'white')
+					.attr('x', 90).attr('y', 187.5)
+					.attr('width', 18).attr('height', 12)
+					.attr('rx', 4.5).attr('ry', 4.5);
+
+
+			},
+
 			updateSvgPosition: function() {
-				if (!this.svg) {return;}
-				this.svg.attr('width', this.w).attr('height', this.h);
-				//this.svg.main.attr('transform', 'translate('+this.w/2+','+this.h/2+')');
-				if (this.display) {this.display.size = [this.w, this.h];}},
+				if (this.svg) {
+					this.svg.attr('width', this.w - this.legendWidth).attr('height', this.h);}
+				if (this.display) {this.display.size = [this.w - this.legendWidth, this.h];}
+				if (this.legend) {
+					this.legend
+						.attr('x', this.w - this.legendWidth)
+						.attr('width', this.legendWidth)
+						.attr('y', 0)
+						.attr('height', this.h);}
+			},
 
 			// by reactome id
 			addEntities: function(ids, callback) {
@@ -161,4 +316,19 @@
 					});}
 
 		});
+
+	/*
+	$P.D3SplitForce.BubbleLinkEnd = $P.defineClass(
+		$P.BubbleLink.End,
+		function D3SplitForceBubbleLinkEnd(config) {
+			this.view = config.view;
+		},
+		{
+			get x() {
+				var svg = this.view.svg;
+
+			},
+			get y() {}
+		});
+	 */
 })(PATHBUBBLES);

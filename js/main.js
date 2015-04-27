@@ -81,7 +81,7 @@
 							x: mousePosX + $P.state.scrollX, y: mousePosY, w: 820, h: 700,
 							dataName: 'human'}));}
 					else if ('split' === key) {
-						bubble = new $P.SplitForce({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 600, h: 600});
+						bubble = new $P.SplitForce({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 750, h: 600});
 						$P.state.scene.add(bubble);}
 					else if ('open_force' == key) {
 						bubble = new $P.Force({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 400, h: 400});
