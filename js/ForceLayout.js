@@ -40,9 +40,10 @@
 				this._size = value;
 				this.force.size(value);},
 			addNode: function(node) {
-				if (this.nodes.indexed[node.id]) {return false;}
 				this.needsUpdate = true;
 				node.layoutId = node.layoutId || ((node.klass || '') + ':' + (node.id || node.name || ''));
+				if (this.nodes.indexed[node.layoutId]) {return null;}
+				node.links = [];
 				this.nodes.push(node);
 				this.nodes.indexed[node.layoutId] = node;
 				if (node.klass) {
@@ -51,7 +52,7 @@
 				if (this.nodeAddTriggers[node.layoutId]) {
 					this.nodeAddTriggers[node.layoutId].forEach(function(callback) {callback(node);});
 					delete this.nodeAddTriggers[node.layoutId];}
-				return true;},
+				return node;},
 			getNode: function(layoutId) {return this.nodes.indexed[layoutId];},
 			addNodes: function(nodes) {this.nodes.forEach(this.addNode.bind(this));},
 			getNodes: function(klass) {
@@ -72,24 +73,93 @@
 					triggers = [];
 					this.nodeAddTriggers[layoutId] = triggers;}
 				triggers.push(callback);},
+			removeNode: function(layoutId) {
+				var self = this, node = this.getNode(layoutId), index;
+				if (!node) {return false;}
+				delete this.nodes.indexed[layoutId];
+				index = this.nodes.indexOf(node);
+				this.nodes.splice(index, 1);
+				if (node.klass) {
+					index = this.nodes[node.klass].indexOf(node);
+					this.nodes[node.klass].splice(index, 1);}
+				node.links.forEach(function(link) {
+					if (link && link.layoutId) {
+						self.removeLink(link.layoutId);}});
+				return true;},
+			groupNodes: function(group, layoutIds) {
+				var self = this,
+						indexed = $P.indexBy(layoutIds, $P.F.Identity);
+				group.componentNodes = [];
+				self.links.forEach(function(link) {
+					self.modifyLink(
+						link,
+						link.source && indexed[link.source.layoutId] && group,
+						link.target && indexed[link.target.layoutId] && group);
+					if (group === link.source && group === link.target) {
+						self.removeLink(link);}
+				});
+				layoutIds.forEach(function(layoutId) {
+					self.applyToNode(layoutId, function(node) {
+						node.grouped_in = group;
+						group.componentNodes.push(node);
+						self.removeNode(layoutId);
+					});});
+				//self.addNode(group);
+			},
+			modifyLink: function(link, source, target) {
+				if (!source && !target) {return;}
+				if (source) {
+					$P.removeFromList(link.source.links, link);
+					link.source = source;
+					source.links.push(link);}
+				if (target) {
+					$P.removeFromList(link.target.links, link);
+					link.target = target;
+					target.links.push(link);}},
 			addLink: function(link) {
+				if (!link.source || !link.target) {console.error('Illegal Link');}
 				if (this.links.indexed[link.id]) {return false;}
-				this.needsUpdate = true;
 				link.layoutId = link.layoutId || ((link.klass || '') + ':' + (link.id || link.name || ''));
 				this.links.push(link);
 				this.links.indexed[link.layoutId] = link;
 				if (link.klass) {
 					this.links[link.klass] = this.links[link.klass] || [];
 					this.links[link.klass].push(link);}
+				if (link.source && link.source.layoutId) {
+					this.applyToNode(link.source.layoutId, function(node) {node.links.push(link);});}
+				if (link.target && link.target.layoutId) {
+					this.applyToNode(link.target.layoutId, function(node) {node.links.push(link);});}
 				if (this.linkAddTriggers[link.layoutId]) {
 					this.linkAddTriggers[link.layoutId].forEach(function(callback) {callback(link);});
 					delete this.linkAddTriggers[link.layoutId];}
 				return true;},
+			removeLink: function(layoutId) {
+				var link = this.getLink(layoutId), index;
+				if (!link) {console.error('xxxxx'); return;}
+				delete this.links.indexed[layoutId];
+				index = this.links.indexOf(link);
+				this.links.splice(index, 1);
+				if (link.klass) {
+					index = this.links[link.klass].indexOf(link);
+					this.links[link.klass].splice(index, 1);}
+				if (link.source && link.source.layoutId) {
+					this.applyToNode(link.source.layoutId, function(node) {
+						$P.removeFromList(node.links, link);});}
+				if (link.target && link.target.layoutId) {
+					this.applyToNode(link.target.layoutId, function(node) {
+						$P.removeFromList(node.links, link);});}
+			},
 			getLink: function(layoutId) {return this.links.indexed[layoutId];},
 			addLinks: function(links) {this.links.forEach(this.addLink.bind(this));},
 			getLinks: function(klass) {
-				if (klass) {return this.links[klass];}
-				return this.links;},
+				var links;
+				if (klass) {
+					links = this.links[klass];
+					if (!links) {
+						links = [];
+						this.links[klass] = links;}
+					return links;}
+				return null;},
 			// Applies function to the link immediately if it's present,
 			// otherwise it is applied when the link is added.
 			applyToLink: function(layoutId, callback) {

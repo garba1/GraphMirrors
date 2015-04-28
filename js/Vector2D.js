@@ -29,3 +29,6 @@ $P.Vector2D = $P.defineClass(
 				this.x * sin + this.y * cos);},
 		array: function() {return [this.x, this.y];}
 	});
+
+$P.Vector2D.ofAngle = function(angle) {
+	return $P.Vector2D(Math.cos(angle), Math.sin(angle));};

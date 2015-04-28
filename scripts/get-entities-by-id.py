@@ -38,6 +38,26 @@ for (reaction_id,) in c:
     reactions[reaction_id] = {'id': reaction_id, 'entities': {}, 'pathways': {}}
 reaction_list = ','.join([str(reaction['id']) for reaction in reactions.values()])
 
+# Grab full reaction data.
+c.execute('SELECT * FROM reactions WHERE reaction_id IN (%s)' % reaction_list)
+for (reaction_id, name, pathway_id, local_id) in c:
+  reaction = reactions[reaction_id]
+  reaction['name'] = name
+  reaction['pathways']['pathway_id'] = local_id
+
+# Filter out repeat reactions.
+reaction_names = {}
+to_delete = []
+for reaction_id in reactions:
+  reaction = reactions[reaction_id]
+  if reaction['name'] in reaction_names:
+    to_delete.append(reaction_id)
+  else:
+    reaction_names[reaction['name']] = True
+for reaction_id in to_delete:
+  del reactions[reaction_id]
+reaction_list = ','.join([str(reaction['id']) for reaction in reactions.values()])
+
 # Grab all entities that are part of the reactions.
 complex_ids = []
 c.execute('SELECT e.entity_id, e.type, e.name, e.location, e.uniprot_id, re.reaction_id, re.direction ' +
@@ -60,21 +80,15 @@ for (entity_id, _type, name, location, uniprot_id, reaction_id, direction) in c:
     if _type == 'Complex':
       complex_ids.append(entity_id)
 
-# Grab full reaction data.
-#c.execute('SELECT * FROM reactions WHERE reaction_id IN (%s)' % reaction_list)
-#for (reaction_id, name, pathway_id, local_id) in c:
-#  reaction = reactions[reaction_id]
-#  reaction['name'] = name
-#  reaction['pathways']['pathway_id'] = local_id
-
-# Grab complex molecule components
-complex_id_list = ','.join([str(c) for c in complex_ids]);
-c.execute('SELECT * FROM components WHERE entity_id IN (%s)' % complex_id_list)
-for (entity_id, component_id) in c:
+# Grab components.
+id_list = ','.join([str(e) for e in entities]);
+c.execute('SELECT * FROM components WHERE entity_id IN (%s)' % id_list)
+for (entity_id, component_id, component_type) in c:
+  #print(entity_id, component_id, component_type)
   entity = entities[int(entity_id)]
   if 'components' not in entity:
-    entity['components'] = []
-  entity['components'].append(int(component_id))
+    entity['components'] = {}
+  entity['components'][int(component_id)] = component_type
 
 pathways = {}
 c.execute('SELECT * FROM entity_pathways WHERE entity_id IN (%s)' % id_list)

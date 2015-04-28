@@ -27,8 +27,7 @@
 				var result;
 
 				if ('dragPathway' == event.name && this.contains(event.x, event.y)) {
-					this.svg.expression = event.expression;
-					this.svg.addPathway(event.pathwayId, event.pathwayName);
+					this.svg.addPathway(event.pathwayId, event.pathwayName, event.expression);
 					return {target: this, name: 'addedPathway', pathwayId: event.pathwayId};}
 
 				result = $P.BubbleBase.prototype.receiveEvent.call(this, event);
