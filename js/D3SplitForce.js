@@ -33,6 +33,7 @@
 			addPathway: function(pathwayId, pathwayName, expressions) {
 				var self = this;
 				function onFinish() {
+					console.log(self.layout);
 					self.layout.consolidateComposite();
 					//self.layout.consolidateReactions();
 					self.pathways.push({id: pathwayId, name: pathwayName, expressions: expressions});
@@ -58,11 +59,21 @@
 					// Since they're linked we'll get the maximal view.
 				}
 				$P.getJSON(
-					'./php/querybyPathwayId.php',
+					'./php/get_entities.php',
 					function (jsonData) {
-						self.addEntities(jsonData.map($P.getter('reactomeID')), onFinish);
-					},
-					{type: 'GET', data: {pathwaydbId: pathwayId}});},
+						console.log(jsonData);
+						if (jsonData.entities) {
+							$.each(jsonData.entities, function(entityId, entity) {
+								entity.klass = 'entity';
+								self.layout.addNode(entity);});}
+						if (jsonData.reactions) {
+							$.each(jsonData.reactions, function(reactionId, reaction) {
+								reaction.klass = 'reaction';
+								self.layout.addNode(reaction);});}
+						onFinish();},
+					{type: 'GET', data: {
+						mode: 'reactome_pathway_id',
+						id: pathwayId}});},
 
 			layoutSingle: function() {
 				this.display = new $P.ForceDisplay({
@@ -251,22 +262,6 @@
 						.attr('width', this.legendWidth)
 						.attr('y', 0)
 						.attr('height', this.h);}
-			},
-
-			// by reactome id
-			addEntities: function(ids, callback) {
-				var self = this;
-				$.getJSON('php/getEntitiesById.php?ids=' + ids.join(','), null, function(data) {
-					if (data.entities) {
-						$.each(data.entities, function(entityId, entity) {
-							entity.klass = 'entity';
-							self.layout.addNode(entity);});}
-					if (data.reactions) {
-						$.each(data.reactions, function(reactionId, reaction) {
-							reaction.klass = 'reaction';
-							self.layout.addNode(reaction);});}
-					callback();
-				});
 			},
 
 			drawSelf: function(context, scale, args) {

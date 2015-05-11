@@ -157,8 +157,10 @@
 				function(d, i) {return d.componentNodes;});
 			self.entities.proteins.crosstalking = self.entities.proteins.filter(
 				function(d, i) {return d.crosstalkCount > 1;});
-			self.entities.small = self.entities.filter(
-				function(d, i) {return 'SmallMolecule' == d.type;});
+			self.entities.small = self.entities.filter(function(d, i) {
+				return 'SmallMolecule' === d.type
+					|| 'Rna' === d.type
+					|| 'Dna' === d.type;});
 			self.entities.complex = self.entities.filter(
 				function(d, i) {return 'Complex' == d.type;});
 			self.entities.complex.composite = self.entities.complex.filter(

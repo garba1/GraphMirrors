@@ -234,6 +234,35 @@ $P.asyncOrdered = function(callbacks) {
 			forEach: function(f) {$.each(this.data, f);}
 		});
 
+	$P.BiMap = $P.defineClass(
+		null,
+		function BiMap() {
+			if (!(this instanceof BiMap)) {return new BiMap();}
+			this.ab = {};
+			this.ba = {};
+			return this;},
+		{
+			put: function(a, b) {
+				if (this.ab.hasOwnProperty(a)) {
+					console.error('BiMap#put(', a, ',', b, '): A already present.');}
+				if (this.ba.hasOwnProperty(b)) {
+					console.error('BiMap#put(', a, ',', b, '): B already present.');}
+				this.ab[a] = b;
+				this.ba[b] = a;},
+			getA: function(b) {return this.ba[b];},
+			getB: function(a) {return this.ab[a];},
+			toArray: function(keyA, keyB) {
+				if (undefined === keyA) {keyA = 'a';}
+				if (undefined === keyB) {keyB = 'b';}
+				var array = [];
+				$.each(this.ab, function(a, b) {
+					var entry = {};
+					entry[keyA] = a;
+					entry[keyB] = b;
+					array.push(entry);
+				});}
+		});
+
 	/**
 	 * Turn a list into a map indexed by f.
 	 */
