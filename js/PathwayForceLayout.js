@@ -43,7 +43,11 @@
 				if (!$P.ForceLayout.prototype.addNode.call(this, node)) {return null;}
 				if ('entity' === node.klass) {this.onAddEntity(node);}
 				if ('reaction' === node.klass) {this.onAddReaction(node);}
+				if ('paper' === node.klass) {this.onAddPaper(node);}
 				return node;},
+			onAddPaper: function(paper) {
+
+			},
 			onAddEntity: function(entity) {
 				var self = this, node, link;
 
@@ -150,6 +154,30 @@
 							if ('output' === direction) {entity.is_output = true;}
 							if ('input' === direction) {entity.is_input = true;}
 						});});}
+				if (reaction.papers) {
+					reaction.papers.forEach(function(paper_id) {
+						var node, link;
+						node = self.getNode('paper:' + paper_id);
+						if (!node) {
+							node = {
+								name: paper_id,
+								id: paper_id,
+								klass: 'paper',
+								charge: -50,
+								reactions: [reaction],
+								x: 0, y: 0};
+							self.addNode(node);}
+						else {
+							node.reactions.push(reaction);}
+						link = {
+							source: reaction,
+							target: node,
+							klass: 'reaction:paper',
+							linkDistance: 40,
+							linkStrength: 0.5,
+							id: self.reactionEdgeCount++};
+						self.addLink(link);
+					});}
 			},
 			/*removeNode: function(layoutId) {
 				var node = this.getNode(layoutId);

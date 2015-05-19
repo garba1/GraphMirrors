@@ -17,7 +17,7 @@ def get_entities_by_id(id_list):
   # Grab entities in list.
   entities = {}
   c.execute('SELECT * FROM entities WHERE entity_id IN (%s)' % id_list)
-  for (entity_id, entity_type, name, location, reactome_id, uniprot_id, entrez_id) in c:
+  for (entity_id, entity_type, name, location, reactome_id, uniprot_ac_id, uniprot_name, entrez_id) in c:
     #print(entity_id, reactome_id)
     entity = {
       'id': entity_id,
@@ -26,7 +26,8 @@ def get_entities_by_id(id_list):
       'expression': 'none',
       'location': location,
       'reactome_id': reactome_id,
-      'uniprot_id': uniprot_id,
+      'uniprot_ac_id': uniprot_ac_id,
+      'uniprot_name': uniprot_name,
       'entrez_id': entrez_id,
       'pathways': {}}
     entities[int(entity_id)] = entity
@@ -51,6 +52,12 @@ def get_entities_by_id(id_list):
     reaction['name'] = name
     reaction['type'] = reaction_type
     reaction['pathways']['pathway_id'] = local_id
+    reaction['papers'] = []
+
+    c2 = db.cursor()
+    c2.execute('SELECT paper_id FROM reaction_papers WHERE reaction_id=?', (reaction_id,))
+    for (paper_id,) in c2:
+      reaction['papers'].append(paper_id)
 
   # Filter out repeat reactions.
   reaction_names = {}
@@ -67,11 +74,11 @@ def get_entities_by_id(id_list):
 
   # Grab all entities that are part of the reactions.
   complex_ids = []
-  c.execute('SELECT e.entity_id, e.entity_type, e.name, e.location, e.uniprot_id, re.reaction_id, re.direction ' +
+  c.execute('SELECT e.entity_id, e.entity_type, e.name, e.location, e.uniprot_ac_id, e.uniprot_name, re.reaction_id, re.direction ' +
             'FROM entities AS e INNER JOIN reaction_entities AS re ' +
             'ON e.entity_id=re.entity_id ' +
             ('WHERE re.reaction_id IN (%s)' % reaction_list))
-  for (entity_id, _type, name, location, uniprot_id, reaction_id, direction) in c:
+  for (entity_id, _type, name, location, uniprot_ac_id, uniprot_name, reaction_id, direction) in c:
     entity_id = int(entity_id)
     reactions[int(reaction_id)]['entities'][entity_id] = direction
     if entity_id not in entities:
@@ -82,7 +89,8 @@ def get_entities_by_id(id_list):
         'name': name,
         'expression': 'none',
         'location': location,
-        'uniprot_id': uniprot_id,
+        'uniprot_ac_id': uniprot_ac_id,
+        'uniprot_name': uniprot_name,
         'pathways': {}}
       if _type == 'Complex':
         complex_ids.append(entity_id)

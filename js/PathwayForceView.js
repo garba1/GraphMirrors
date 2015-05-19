@@ -43,11 +43,23 @@
 					title = title.join('');}
 				return title;}
 
-			function entityFilter(node) {
+			function entityFilter1(node) {
 				if ('entity' !== node.klass) {return false;}
-				if (node.pathways && !node.pathways[parseInt(self.pathway.id)]) {return false;}
 				if (node.reactions && node.reactions.length > 0) {return true;}
-				if (node.componentNodes && $P.or(node.componentNodes, entityFilter)) {return true;}
+				if (node.componentNodes && $P.or(node.componentNodes, entityFilter1)) {return true;}
+				return false;}
+
+			function entityFilter2(node) {
+				var i, j, reaction, entities, entity;
+				if (node.reactions) {
+					for (i = 0; i < node.reactions.length; ++i) {
+						reaction = node.reactions[i];
+						entities = Object.keys(reaction.entities);
+						for (j = 0; j < entities.length; ++j) {
+							entity = self.visibleEntities.indexed['entity:'+entities[j]];
+							if (entity && (!entity.pathways || entity.pathways[parseInt(self.pathway.id)])) {
+										return true;}}}}
+				if (!node.pathways || node.pathways[parseInt(self.pathway.id)]) {return true;}
 				return false;}
 
 			function entitylabelFilter(node) {
@@ -67,23 +79,35 @@
 				if ('location' !== node.klass) {return false;}
 				return $P.or(self.visibleEntities, function(entity) {return entity.location === node.id;});}
 
+			function paperFilter(node) {
+				var i;
+				if ('paper' !== node.klass) {return false;}
+				for (i = 0; i < node.reactions.length; ++i) {
+					if (self.visibleReactions.indexed[node.reactions[i].layoutId]) {return true;}}
+				return false;}
+
 			function isNodeVisible(node) {
 				if (!node) {return false;}
 				var id = node.layoutId;
 				return self.visibleEntities.indexed[id]
 					|| self.visibleEntitylabels.indexed[id]
 					|| self.visibleReactions.indexed[id]
-					|| self.visibleLocations.indexed[id];}
+					|| self.visibleLocations.indexed[id]
+					|| self.visiblePapers.indexed[id];}
 
-			self.visibleEntities = self.layout.nodes.filter(entityFilter);
+			self.visibleEntities = self.layout.nodes.filter(entityFilter1);
 			self.visibleEntities.indexed = $P.indexBy(self.visibleEntities, $P.getter('layoutId'));
 			self.visibleEntitylabels = self.layout.nodes.filter(entitylabelFilter);
 			self.visibleEntitylabels.indexed = $P.indexBy(self.visibleEntitylabels, $P.getter('layoutId'));
 			self.visibleReactions = self.layout.nodes.filter(reactionFilter);
 			self.visibleReactions.indexed = $P.indexBy(self.visibleReactions, $P.getter('layoutId'));
+			self.visibleEntities = self.visibleEntities.filter(entityFilter2);
+			self.visibleEntities.indexed = $P.indexBy(self.visibleEntities, $P.getter('layoutId'));
 			self.visibleLocations = self.layout.nodes.filter(locationFilter);
 			self.visibleLocations.indexed = $P.indexBy(self.visibleLocations, $P.getter('layoutId'));
-			self.visibleNodes = [].concat(self.visibleEntities, self.visibleEntitylabels, self.visibleReactions, self.visibleLocations);
+			self.visiblePapers = self.layout.nodes.filter(paperFilter);
+			self.visiblePapers.indexed = $P.indexBy(self.visiblePapers, $P.getter('layoutId'));
+			self.visibleNodes = [].concat(self.visibleEntities, self.visibleEntitylabels, self.visibleReactions, self.visibleLocations, self.visiblePapers);
 
 			self.visibleLinks = self.layout.links.filter(function(link) {
 				//if (link.klass === 'entity:label') {console.log(link, link.source, link.target, isNodeVisible(link.source),  isNodeVisible(link.target));}
@@ -142,10 +166,34 @@
 				.attr('stroke', 'black')
 				.attr('stroke-width', 0.5)
 				.attr('fill', 'none');
+			self.paperLinks = self.links.filter(
+				function(d, i) {return 'reaction:paper' === d.klass;});
+			self.paperLinks.append('line')
+				.attr('stroke', 'black')
+				.attr('stroke-width', 0.9)
+				.attr('fill', 'none');
+			self.papers = self.nodes.filter(function(d, i) {return 'paper' === d.klass;});
+			self.papers.append('polygon')
+				.attr('points', '5,4 -5,4 0,-5.5')
+				.style('stroke', 'black')
+				.style('fill', 'cyan')
+				.attr('pointer-events', 'all')
+				.on('click', function(d) {console.log(d);})
+				.append('title').text(nodeTitle);
 			self.reactions = self.nodes.filter(function(d, i) {return 'reaction' === d.klass;});
-			self.reactions.append('rect')
+			self.reactions.standard = self.reactions.filter(function(d, i) {return 'standard' === d.type;});
+			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.type;});
+			self.reactions.standard.append('rect')
 				.attr('stroke', 'black')
 				.attr('fill', 'red')
+				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
+				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
+				.attr('pointer-events', 'all')
+				.on('click', function(d) {console.log(d);})
+				.append('title').text(nodeTitle);
+			self.reactions.phosphorylated.append('rect')
+				.attr('stroke', 'black')
+				.attr('fill', 'blue')
 				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
 				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
 				.attr('pointer-events', 'all')
@@ -201,14 +249,16 @@
 					.attr('pointer-events', 'none') // Can't click on them.
 					.attr('r', 100);});
 			self.entities.other.each(function(d, i) {
-				self.drawBackground.append('circle')
-					.attr('class', 'follower')
-					.attr('follow-id', d.layoutId)
-					.attr('stroke', 'none')
-					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.25)
-					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 100);});
+				var location = self.layout.getNode('location:'+d.location);
+				if (location) {
+					self.drawBackground.append('circle')
+						.attr('class', 'follower')
+						.attr('follow-id', d.layoutId)
+						.attr('stroke', 'none')
+						.attr('fill', location.color)
+						.attr('fill-opacity', 0.25)
+						.attr('pointer-events', 'none') // Can't click on them.
+						.attr('r', 100);}});
 			// Nodes in the pathway.
 			// An extra box indicating crosstalk.
 			self.entities.proteins.crosstalking

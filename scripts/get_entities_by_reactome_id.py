@@ -15,7 +15,7 @@ def get_entities_by_reactome_id(id_list):
   # Grab entities in list.
   entities = {}
   c.execute('SELECT * FROM entities WHERE reactome_id IN (%s)' % id_list)
-  for (entity_id, entity_type, name, location, reactome_id, uniprot_id, entrez_id) in c:
+  for (entity_id, entity_type, name, location, reactome_id, uniprot_ac_id, uniprot_name, entrez_id) in c:
     #print(entity_id, reactome_id)
     entity = {
       'id': entity_id,
@@ -24,7 +24,8 @@ def get_entities_by_reactome_id(id_list):
       'expression': 'none',
       'location': location,
       'reactome_id': reactome_id,
-      'uniprot_id': uniprot_id,
+      'uniprot_ac_id': uniprot_ac_id,
+      'uniprot_name': uniprot_name,
       'entrez_id': entrez_id,
       'pathways': {}}
     entities[int(entity_id)] = entity
