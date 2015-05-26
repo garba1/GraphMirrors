@@ -86,9 +86,10 @@
 					if (link && link.layoutId) {
 						self.removeLink(link.layoutId);}});
 				return true;},
-			groupNodes: function(group, layoutIds) {
+			groupNodes: function(group, layoutIds, remove) {
 				var self = this,
 						indexed = $P.indexBy(layoutIds, $P.F.Identity);
+				if (undefined === remove) {remove = true;}
 				group.componentNodes = [];
 				self.links.forEach(function(link) {
 					self.modifyLink(
@@ -102,7 +103,7 @@
 					self.applyToNode(layoutId, function(node) {
 						node.grouped_in = group;
 						group.componentNodes.push(node);
-						self.removeNode(layoutId);
+						if (remove) {self.removeNode(layoutId);}
 					});});
 				//self.addNode(group);
 			},

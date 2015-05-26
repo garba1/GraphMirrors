@@ -445,5 +445,11 @@
 					$(menu.element).find('#localPercentBlock').show();});},
 			onPositionChanged: function (dx, dy, dw, dh) {
 				$P.HtmlMenu.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
-			}});
+			},
+
+			getPersistObject: function() {
+				return {class: 'TreeRing',
+								config: this.config};}
+
+		});
 })(PATHBUBBLES);

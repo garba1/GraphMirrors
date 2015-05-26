@@ -264,6 +264,7 @@
 					this.title.strokeStyle = style;
 					this.title.fillStyle = style;}
 				$P.state.markDirty();}
+
 		});
 
 	/**

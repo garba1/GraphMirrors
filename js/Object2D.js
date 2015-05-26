@@ -19,6 +19,7 @@ $P.Object2D = $P.defineClass(
 	 */
 	function Object2D(config) {
 		config = config || {};
+		this.config = config;
 
 		/** @member {number} id - unique object id */
 		this.id = $P.Object2D.IdCount++;

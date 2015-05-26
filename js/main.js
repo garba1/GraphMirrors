@@ -80,6 +80,13 @@
 						$P.state.scene.add(new $P.TreeRing({
 							x: mousePosX + $P.state.scrollX, y: mousePosY, w: 820, h: 700,
 							dataName: 'human'}));}
+					else if ('save' === key) {
+						$.cookie('graphmirrors.save', JSON.stringify($P.state.scene.getPersistObject()));}
+					else if ('load' === key) {
+						$P.state.scene.deleteAll();
+						var state = JSON.parse($.cookie('graphmirrors.save'));
+						console.log(state);
+					}
 					else if ('split' === key) {
 						bubble = new $P.SplitForce({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 750, h: 600});
 						$P.state.scene.add(bubble);}
@@ -101,6 +108,8 @@
 				},
 				items: {
 					'split': {name: 'Open Split Diagram'},
+					save: {name: 'Save'},
+					load: {name: 'Load'},
 					'Open_TreeRing': {name: 'Open Entire Pathway'},
 					'Delete_All': {name: 'Delete All'},
 					'Open_Help': {name: 'Open Help'},

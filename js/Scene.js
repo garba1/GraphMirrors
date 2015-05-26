@@ -169,5 +169,13 @@ $P.Scene = $P.defineClass(
 		findChild: function(predicate) {
 			return $P.or(this.children, function(child) {
 				if (predicate(child)) {return child;}
-				return child.findChild(predicate);});}
+				return child.findChild(predicate);});},
+
+		getPersistObject: function() {
+			var persist = [];
+			this.children.forEach(function(child) {
+				console.log(child);
+				if (child.getPersistObject) {
+					persist.push(child.getPersistObject());}});
+			return persist;}
 	});

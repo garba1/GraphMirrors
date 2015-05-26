@@ -200,7 +200,9 @@
 				.on('click', function(d) {console.log(d);})
 				.append('title').text(nodeTitle);
 			self.entities = self.nodes.filter(function(d, i) {return 'entity' === d.klass;});
-			self.entities.proteins = self.entities.filter(function(d, i) {return 'Protein' == d.type;});
+			self.entities.proteins = self.entities.filter(function(d, i) {
+				var type = d.type && d.type.toLowerCase();
+				return 'protein' == type;});
 			self.entities.proteins.composite = self.entities.proteins.filter(
 				function(d, i) {return d.componentNodes;});
 			self.entities.proteins.crosstalking = self.entities.proteins.filter(
@@ -217,37 +219,43 @@
 				function(d, i) {
 					return 'Complex' !== d.type
 						&& 'SmallMolecule' !== d.type
-						&& 'Protein' !== d.type;});
+						&& 'Protein' !== d.type && 'protein' !== d.type;});
 			// The big transparent background circles encoding location.
 			self.entities.other.composite = self.entities.other.filter(
 				function(d, i) {return d.componentNodes;});
 			self.entities.proteins.each(function(d, i) {
-				self.drawBackground.append('circle')
-					.attr('class', 'follower')
-					.attr('follow-id', d.layoutId)
-					.attr('stroke', 'none')
-					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.25)
-					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 100);});
+				var location = self.layout.getNode('location:'+d.location);
+				if (location) {
+					self.drawBackground.append('circle')
+						.attr('class', 'follower')
+						.attr('follow-id', d.layoutId)
+						.attr('stroke', 'none')
+						.attr('fill', location.color)
+						.attr('fill-opacity', 0.25)
+						.attr('pointer-events', 'none') // Can't click on them.
+						.attr('r', 100);}});
 			self.entities.small.each(function(d, i) {
-				self.drawBackground.append('circle')
-					.attr('class', 'follower')
-					.attr('follow-id', d.layoutId)
-					.attr('stroke', 'none')
-					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.25)
-					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 100);});
+				var location = self.layout.getNode('location:'+d.location);
+				if (location) {
+					self.drawBackground.append('circle')
+						.attr('class', 'follower')
+						.attr('follow-id', d.layoutId)
+						.attr('stroke', 'none')
+						.attr('fill', location.color)
+						.attr('fill-opacity', 0.25)
+						.attr('pointer-events', 'none') // Can't click on them.
+						.attr('r', 100);}});
 			self.entities.complex.each(function(d, i) {
-				self.drawBackground.append('circle')
-					.attr('class', 'follower')
-					.attr('follow-id', d.layoutId)
-					.attr('stroke', 'none')
-					.attr('fill', self.layout.getNode('location:'+d.location).color)
-					.attr('fill-opacity', 0.25)
-					.attr('pointer-events', 'none') // Can't click on them.
-					.attr('r', 100);});
+				var location = self.layout.getNode('location:'+d.location);
+				if (location) {
+					self.drawBackground.append('circle')
+						.attr('class', 'follower')
+						.attr('follow-id', d.layoutId)
+						.attr('stroke', 'none')
+						.attr('fill', location.color)
+						.attr('fill-opacity', 0.25)
+						.attr('pointer-events', 'none') // Can't click on them.
+						.attr('r', 100);}});
 			self.entities.other.each(function(d, i) {
 				var location = self.layout.getNode('location:'+d.location);
 				if (location) {

@@ -204,7 +204,7 @@
 					if (entity.components) {
 						$.each(entity.components, function(component_id, component_type) {
 							components.push('entity:' + component_id);});
-						self.groupNodes(entity, components);
+						self.groupNodes(entity, components, false);
 						self.getLinks('entity:location')
 							.filter(function(link) {return link.source === entity || link.target === entity;})
 							.slice(1).forEach(function(link) {self.removeLink(link.layoutId);});}
@@ -224,7 +224,7 @@
 				consolidated.forEach(function(hash, reactions) {
 					var first = reactions.splice(0, 1)[0],
 							rest = reactions.map($P.getter('layoutId'));
-					self.groupNodes(first, rest);});
+					self.groupNodes(first, rest, false);});
 			}
 		});
 })(PATHBUBBLES);

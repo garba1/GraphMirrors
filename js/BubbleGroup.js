@@ -10,7 +10,7 @@ var $P = PATHBUBBLES;
 
 $P.BubbleGroup = $P.defineClass(
 	$P.Object2D,
-	function  BubbleGroup(child) {
+	function BubbleGroup(child) {
 		$P.Object2D.call(this);
 		if (child) {
 			this.strokeStyle = child.strokeStyle;
@@ -106,6 +106,21 @@ $P.BubbleGroup = $P.defineClass(
 				if (child.groupButton) {child.groupButton.setHighlighted(grouped);}
 				x += child.w + child.lineWidth * 0.5;
 			}.bind(this));
+		},
+
+		getPersistObject: function() {
+			var self = this,
+					state = {
+						class: 'BubbleGroup',
+						config: self.config,
+						children: []};
+			self.children.forEach(function(child) {
+				console.log('child:', child, child.getPersistObject);
+				if (child.getPersistObject) {
+					state.children.push(child.getPersistObject());}});
+			console.log(state);
+			return state;
 		}
+
 	}
 );
