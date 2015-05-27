@@ -79,6 +79,7 @@
 				this.display = new $P.ForceDisplay({
 					svg: this.svg,
 					parent: this.svg.main,
+					parentBubble: this.parent,
 					layout: this.layout,
 					shape: new $P.ForceShape.Centered({w: this.w, h: this.h, count: 1}),
 					viewArgs: this.pathways,
@@ -88,6 +89,7 @@
 				this.display = new $P.ForceDisplay({
 					svg: this.svg,
 					parent: this.svg.main,
+					parentBubble: this.parent,
 					layout: this.layout,
 					shape: new $P.ForceShape.Mirror({w: this.w * 0.5, h: this.h, count: 2}),
 					viewArgs: this.pathways,
@@ -97,6 +99,7 @@
 				this.display = new $P.ForceDisplay({
 					svg: this.svg,
 					parent: this.svg.main,
+					parentBubble: this.parent,
 					layout: this.layout,
 					shape: new $P.ForceShape.Radial({
 						count: this.pathways.length,

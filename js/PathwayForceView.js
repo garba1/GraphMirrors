@@ -178,7 +178,14 @@
 				.style('stroke', 'black')
 				.style('fill', 'cyan')
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					console.log(d);
+					self.parentBubble.parent.add(new $P.IFrameBubble({
+						w: 1200,
+						h: 600,
+						url: 'http://research.bioinformatics.udel.edu/rlimsp/view.php?s=1225&abs=0#EvidenceView?pmid=' + d.id
+					}));
+				})
 				.append('title').text(nodeTitle);
 			self.reactions = self.nodes.filter(function(d, i) {return 'reaction' === d.klass;});
 			self.reactions.standard = self.reactions.filter(function(d, i) {return 'standard' === d.type;});

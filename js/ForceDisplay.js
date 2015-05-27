@@ -12,6 +12,7 @@
 				return;}
 
 			this.parent = config.parent || this.svg;
+			this.parentBubble = config.parentBubble || null;
 
 			this.layout = config.layout;
 			if (!this.layout) {
@@ -38,6 +39,7 @@
 				view = new this.viewConstructor({
 					svg: this.svg,
 					parent: this.parent,
+					parentBubble: this.parentBubble,
 					layout: this.layout,
 					shape: this.shape,
 					displayArgument: config.viewArgs[i],

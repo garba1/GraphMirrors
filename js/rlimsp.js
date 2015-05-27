@@ -12,7 +12,8 @@ PATHBUBBLES.rlimsp = (function($P, d3){
 					+ '/server/middle_layer/RlimsJson.php?rid=63&pmid='
 					+ pmid},
 			error: function(jqXHR, textStatus, errorThrown) {
-				console.error(textStatus, errorThrown);},
+				console.error(textStatus, errorThrown);
+				onFinish(null);},
 			success: function(data) {
 				var rows = d3.csv.parseRows(data),
 						sentenceRows = [],
