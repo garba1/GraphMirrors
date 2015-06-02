@@ -17,6 +17,10 @@ PATHBUBBLES.rlimsp = (function($P, d3){
 			success: function(data) {
 				var rows = d3.csv.parseRows(data),
 						sentenceRows = [],
+						sentenceArray = [],
+						authors = rows[2][2],
+						publication = rows[2][3],
+						link = rows[2][4],
 						proteins = {},
 						sentences = {},
 						i, protein;
@@ -37,21 +41,27 @@ PATHBUBBLES.rlimsp = (function($P, d3){
 					var kinase = sentenceRow[1],
 							substrate = sentenceRow[2],
 							site = sentenceRow[3],
-							sentence = sentenceRow[4];
+							sentence = sentenceRow[4],
+							entry = {
+								kinase: kinase,
+								substrate: substrate,
+								sentence: sentence,
+								site: site};
 					if (undefined === sentences[kinase]) {
 						sentences[kinase] = {};}
 					if (undefined === sentences[kinase][substrate]) {
 						sentences[kinase][substrate] = [];}
-					sentences[kinase][substrate].push({
-						kinase: kinase,
-						substrate: substrate,
-						sentence: sentence,
-						site: site});
+					sentences[kinase][substrate].push(entry);
+					sentenceArray.push(entry);
 				});
 
 				onFinish({
+					authors: authors,
+					publication: publication,
+					link: link,
 					proteins: proteins,
-					sentences: sentences});}});}
+					sentences: sentences,
+					sentenceArray: sentenceArray});}});}
 
 	return {
 		getTextEvidence: getTextEvidence

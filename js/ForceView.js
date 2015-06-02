@@ -63,16 +63,21 @@
 				this.element.attr('transform',
 													this.shape.transform(this)
 													+ 'translate(' + this.zoom.translate() + ')'
-													+ 'scale(' + this.zoom.scale() + ')');},
+													+ 'scale(' + this.zoom.scale() + ')');
+				this.onTick();},
 			onTick: function() {
-				this.element.selectAll('.node').attr('transform', function(d, i) {
-					return 'translate(' + d.x + ',' + d.y + ')';});
+				this.element.selectAll('.node')
+					.attr('transform', function(d, i) {
+						return 'translate(' + d.x + ',' + d.y + ')';});
 
 				this.element.selectAll('.link line')
 					.attr('x1', function (link) {return link.source.x;})
 					.attr('y1', function(link) {return link.source.y;})
 					.attr('x2', function(link) {return link.target.x;})
-					.attr('y2', function(link) {return link.target.y;});}
+					.attr('y2', function(link) {return link.target.y;});
+
+				this.element.selectAll('*').each(function(d, i) {
+					if (this.onTick) {this.onTick(d, i);}});}
 		});
 
 	$P.ForceView.nextId = 0;

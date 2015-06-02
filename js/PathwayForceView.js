@@ -178,15 +178,99 @@
 				.style('stroke', 'black')
 				.style('fill', 'cyan')
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {
+				.on('mouseover', function(d) {
+					var node = this;
+					node.text = node.text || 'Loading PMID ' + d.id + ' ...';
+
+					node.onTick = function(d, i) {
+						if (!this.displayElement) {return;}
+						var rect = this.getBoundingClientRect();
+						this.displayElement.move(
+							(rect.left + rect.right) * 0.5 + $P.state.scrollX,
+							(rect.top + rect.bottom) * 0.5 - 50,
+							350,
+							300);
+						if (self.parentBubble.contains(this.displayElement.x, this.displayElement.y)) {
+							$(this.displayElement.element).show();}
+						else {
+							$(this.displayElement.element).hide();}};
+
+					if (!node.sentences) {
+						node.sentences = true;
+						$P.rlimsp.getTextEvidence(d.id, function(data) {
+							if (null === data) {
+								node.sentences = false;
+								return;}
+							var text = '';
+							text += '<b>Authors:</b> ' + data.authors + '<br/>';
+							text += '<b>Publication:</b> ' + data.publication + '<br/>';
+							text += '<ol>';
+							data.sentenceArray.forEach(function(sentence) {
+								text += '<li>' + sentence.sentence + '</li>';});
+							text += '</ol>';
+							node.text = text;
+							if (node.displayElement) {
+								node.displayElement.element.innerHTML = node.text;}});}
+
+					if (!node.displayElement) {
+						function display() {
+							var rect = node.getBoundingClientRect();
+							node.displayElement = new $P.HtmlObject({
+								parent: '#bubble',
+								before: '#overlayCanvas',
+								type: 'div',
+								class: 'frame',
+								pointer: null,
+								objectConfig: {
+									x: (rect.left + rect.right) * 0.5 + $P.state.scrollX,
+									y: (rect.top + rect.bottom) * 0.5 - 50,
+									w: 300,
+									h: 300}});
+							if (node.lockTooltip) {
+								$(node.displayElement.element).addClass('pinned');}
+							node.displayElement.ignoreH = true;
+							node.displayElement.translate();
+							node.displayElement.element.innerHTML = node.text;
+							self.parentBubble.add(node.displayElement);
+							d3.select(node.displayElement.element)
+								.on('click', function() {
+									node.displayElement.delete();
+									d3.event.preventDefault();})
+								.on('contextmenu', function() {
+									d3.event.preventDefault();
+									self.parentBubble.parent.add(new $P.IFrameBubble({
+										w: 1200,
+										h: 600,
+										url: 'http://research.bioinformatics.udel.edu/rlimsp/view.php?s=1225&abs=0#EvidenceView?pmid=' + d.id
+									}));});
+						}
+						node.displayTimer = window.setTimeout(display, 150);}})
+				.on('mouseleave', function(d, i) {
+					if (this.lockTooltip) {return;}
+					if (this.displayTimer) {
+						window.clearTimeout(this.displayTimer);
+						this.displayTimer = null;}
+					if (this.displayElement) {
+						this.displayElement.delete();
+						this.displayElement = null;}
+				})
+				.on('click', function(d, i) {
+					this.lockTooltip = !this.lockTooltip;
+					if (this.displayElement) {
+						if (this.lockTooltip) {
+							$(this.displayElement.element).addClass('pinned');}
+						else {
+							$(this.displayElement.element).removeClass('pinned');}}})
+				.on('contextmenu', function(d) {
 					console.log(d);
 					self.parentBubble.parent.add(new $P.IFrameBubble({
 						w: 1200,
 						h: 600,
 						url: 'http://research.bioinformatics.udel.edu/rlimsp/view.php?s=1225&abs=0#EvidenceView?pmid=' + d.id
 					}));
-				})
-				.append('title').text(nodeTitle);
+				});
+				//.append('title').text(function(d) {
+				//	return 'PMID: ' + d.id + '  (loading...)';});
 			self.reactions = self.nodes.filter(function(d, i) {return 'reaction' === d.klass;});
 			self.reactions.standard = self.reactions.filter(function(d, i) {return 'standard' === d.type;});
 			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.type;});

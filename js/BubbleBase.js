@@ -266,6 +266,7 @@
 				$P.state.markDirty();}
 
 		});
+	$P.Bubble = $P.BubbleBase;
 
 	/**
 	 * List of colors that the borders can take.

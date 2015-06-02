@@ -17,13 +17,15 @@ $P.HtmlObject = $P.defineClass(
 		/** @member {HTMLElement} element - the actual html element */
 		this.element = document.createElement(config.type);
 		if (config.before) {
-			$(config.parent).find(config.before).before(this.element);
-		}
+			$(config.parent).find(config.before).before(this.element);}
 		else {
 			$(config.parent).append(this.element);}
+		if (config.class) {
+			this.element.setAttribute('class', config.class);}
 		this.element.setAttribute('id', id);
 		this.element.style.position = 'absolute';
-		this.element.style['pointer-events'] = config.pointer || 'none';
+		if (undefined === config.pointer) {config.pointer = 'none';}
+		if (null !== config.pointer) {this.element.style['pointer-events'] = config.pointer;}
 		this.onPositionChanged();
 	},
 	{
@@ -42,9 +44,9 @@ $P.HtmlObject = $P.defineClass(
 			$P.Object2D.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
 			e.css({
 				top: (this.y + $P.state.mainCanvas.getLocation().y) + 'px'});
-			if (this.w) {e.css('width', this.w + 'px');}
+			if (this.w && !this.ignoreW) {e.css('width', this.w + 'px');}
 			else {e.css('width', 'auto');}
-			if (this.h) {e.css('height', this.h + 'px');}
+			if (this.h && !this.ignoreH) {e.css('height', this.h + 'px');}
 			else {e.css('height', 'auto');}},
 		/**
 		 * If the element can receieve pointer events.
