@@ -1,0 +1,18 @@
+.frame {
+		background-color: #FF6;
+		color: black;
+		font-size: small;
+		border: 3px solid black;
+		overflow: hidden;
+		padding: 4px;
+		z-index: 10000;
+		max-height: 80%;
+}
+.frame ul, .frame ol {
+		list-style: inside;
+}
+.frame.pinned {
+		border: 5px solid blue;
+		pointer-events: all;
+		overflow-y: auto;
+}
