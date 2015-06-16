@@ -29,5 +29,8 @@ $P.HtmlMenu = $P.defineClass(
 		if (config.minW) {this.element.style['min-width'] = config.minW;}
 		this.element.innerHTML += menuString;},
 	{
-
+		onParentPositionChanged: function(dx, dy, dw, dh) {
+			var x = this.x + dx + dw, y = this.y + dy;
+			//$P.HtmlObject.prototype.onParentPositionChanged.call(this, dx, dy, dw, dh);
+			this.move(x, y);}
 	});

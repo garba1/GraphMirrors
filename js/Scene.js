@@ -27,6 +27,8 @@ $P.Scene = $P.defineClass(
 		this.links = [];
 
 		this.hints = [];
+
+		this.logfile = 'log';
 	},
 	{
 		/**
@@ -117,7 +119,49 @@ $P.Scene = $P.defineClass(
 		 * @returns {?*} - the value returned by the event handler
 		 */
 		sendEvent: function(event) {
+			this.recordEvent(event);
 			return $P.or(this.children, $P.method('receiveEvent', event));},
+
+		recordEvent: function(event) {
+			if (!this.recording) {return;}
+			event.timestamp = Date.now();
+			event.__event = true;
+			this.recording.push(event);
+			if (this.recording.length > 50) {
+				this.flushLog();}},
+
+		flushLog: function() {
+			var log = this.recording;
+			this.recording = [];
+			var text = '';
+			function logger(key, value) {
+				if (value instanceof $P.Object2D) {
+					return {type: 'object',
+									name: value.name,
+									id: value.id,
+									class: value.constructor && value.constructor.name};}
+				if ('object' === typeof value && value.__event) {
+					return value;}
+				if ('object' === typeof value && !value.__event) {
+					return {
+						__type: 'object',
+						id: value.id,
+						name: value.name,
+						class: value.construcor && value.constructor.name};}
+				return value;}
+			log.forEach(function(line) {
+				text += JSON.stringify(line, logger);
+				text += '\n';});
+			$.ajax({
+				type: 'GET',
+				dataType: 'text',
+				url: './php/write_log.php',
+				data: {
+					logfile: this.logfile,
+					entry: text}});},
+
+
+		record: function(event) {return this.recordEvent(event);},
 
 		/**
 		 * Removes and deletes all children.
@@ -172,10 +216,23 @@ $P.Scene = $P.defineClass(
 				return child.findChild(predicate);});},
 
 		getPersistObject: function() {
-			var persist = [];
+			var persist = [], info = {bubbles: {}};
 			this.children.forEach(function(child) {
-				console.log(child);
 				if (child.getPersistObject) {
-					persist.push(child.getPersistObject());}});
-			return persist;}
+					persist.push(child.getPersistObject(info));}});
+			console.log('persist:', persist);
+			return persist;},
+
+		loadPersistObject: function(persist) {
+			var self = this;
+			this.deleteAll();
+			persist.forEach(function(p) {
+				var config = p.config;
+				config.fromPersist = true;
+				config.parent = self;
+				var object = $P[p.class].call(null, config);
+				if (object.loadPersistObject) {
+					object.loadPersistObject(p);}
+			});
+		}
 	});

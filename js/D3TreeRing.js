@@ -6,6 +6,8 @@
 	$P.D3TreeRing = $P.defineClass(
 		$P.HtmlObject,
 		function D3TreeRing(config) {
+			if (!(this instanceof D3TreeRing)) {return new D3TreeRing(config);}
+
 			$P.HtmlObject.call(this, {
 				parent: '#bubble',
 				before: '#overlayCanvas',
@@ -266,8 +268,7 @@
 					.attr('transform', 'translate(' + 10 + ',' + 18 + ')')
 					.style('text-anchor', 'start')
 					.style('fill', 'black')
-					.text(self.parent.orthologLabel ||
-								((self.customExpression ? '' : 'Human vs. ') + self.parent.species));
+					.text(self.parent.orthologLabel || self.parent.species);
 
 
 				/*
@@ -300,15 +301,16 @@
 						cx = this.x + this.w * 0.5 + this.zoomTranslate[0] / this.zoomScale;
 						cy = this.y + this.h * 0.5 + this.zoomTranslate[1] / this.zoomScale;
 						gGroup.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')');
-						this.parent.links.forEach(function(link) {
-							if (link.source == this.parent) {
-								link.sourceOffset.x = cx + link.radialX * this.zoomScale;
-								link.sourceOffset.y = cy + link.radialY * this.zoomScale;}
-							else if (link.target == this.parent) {
-								link.sourceOffset.x = cx + link.radialX * this.zoomScale;
-								link.sourceOffset.y = cy + link.radialY * this.zoomScale;}
-							$P.state.overlayCanvas.needsRedraw = true;
-						}.bind(this));
+						if (this.parent) {
+							this.parent.links.forEach(function(link) {
+								if (link.source == this.parent) {
+									link.sourceOffset.x = cx + link.radialX * this.zoomScale;
+									link.sourceOffset.y = cy + link.radialY * this.zoomScale;}
+								else if (link.target == this.parent) {
+									link.sourceOffset.x = cx + link.radialX * this.zoomScale;
+									link.sourceOffset.y = cy + link.radialY * this.zoomScale;}
+							}.bind(this));}
+						$P.state.overlayCanvas.needsRedraw = true;
 					}.bind(this));
 
 				var partition = d3.layout.partition()
@@ -361,12 +363,13 @@
 							x = _this.dragAbsolute.x + _this.parent.x + _this.parent.w * 0.5,
 							y = _this.dragAbsolute.y + _this.parent.y + _this.parent.h * 0.5;
 
-
 							event = {
 								name: 'dragPathway',
 								x: x, y: y,
 								pathwayId: d.dbId,
 								pathwayName: d.name,
+								symbols: d.symbols,
+								strokeStyle: self.parent.strokeStyle,
 								expression: _this.getExpressionMap()};
 							result = $P.state.scene.sendEvent(event);
 
@@ -379,16 +382,6 @@
 							_this.dragging = null;
 							_this.dragOffset = null;
 						});}
-
-				var tooltip = d3.select(this.parent.svg.element)
-							.append('div')
-							.attr('class', 'tooltip')
-							.style('fill', '#333')
-							.style('font-size', '12px')
-							.style('background', '#eee')
-							.style('box-shadow', '0 0 5px #999999')
-							.style('position', 'absolute')
-							.style('z-index', '10');
 
 				function format_number(x) {
 					return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -596,7 +589,8 @@
 
 							function operation(finish) {
 								var crossTalkFileName = './data/crossTalkLevel/' + nodeData[0].name + '.json';
-								self.parent.crossTalkLevel = self.showCrossTalkLevel;
+								if (self.parent) {
+									self.parent.crossTalkLevel = self.showCrossTalkLevel;}
 								$P.getJSON(crossTalkFileName, function (crossTalkData, error) {
 									var classes = crossTalkData[self.showCrossTalkLevel - 1];
 									gGroup = mainSvg.append('g').attr('class', 'graphGroup');
@@ -735,28 +729,12 @@
 										.on('contextmenu', rightClick)
 										.on('click', click)
 										.on('mousedown', function() {d3.event.stopPropagation();})
-										.on('mouseover', function (d, i) {
-											if (d.name == 'homo sapiens')
-												return null;
-											tooltip.html(function () {
-												return format_name(d);
-											});
-											return tooltip.transition()
-												.duration(50)
-												.style('opacity', 0.9);})
-										.on('mousemove', function (d, i) {
-											if (d.name == 'homo sapiens') {return null;}
-											return tooltip
-												.style('top', (d3.event.pageY - 10 - _this.parent.y - 70 ) + 'px')
-												.style('left', (d3.event.pageX + 10 - _this.parent.x + $P.state.scrollX) + 'px');
-										})
-										.on('mouseout', function () {
-											return tooltip.style('opacity', 0);
-										});
+										.call($P.tooltip.add(function(d, i) {
+											if ('homo sapiens' === d.name) {return null;}
+											return format_name(d);}));
 									if (forceEnabled) {pathG.call(itemDrag);}
 									svg.on('mouseout', function () {
-										return tooltip.html('');
-									});
+										$P.tooltip.hide();});
 
 									function computeTextRotation(d, i) {
 										if (i == 0)
@@ -765,7 +743,7 @@
 										return angle / Math.PI * 180;
 									}
 
-									var nodes = nodeData.filter(function(d) {return self.parent.crosstalkLevel == d.depth;});
+									var nodes = nodeData.filter(function(d) {return (self.parent && self.parent.crosstalkLevel) == d.depth;});
 									nodeData.forEach(function(node) {
 										node.a = node.x;
 										node.r = node.y;
@@ -836,6 +814,8 @@
 											d.thickness = Math.min(d.theta * d.radius, 40);
 											var up = d.expression.ups.length,
 													down = d.expression.downs.length;
+											d.up = up;
+											d.down = down;
 											d.upExponent = Math.max(0, Math.floor(Math.log(up) / Math.log(10)));
 											d.upDigit = up / Math.pow(10, d.upExponent);
 											d.downExponent = Math.max(0, Math.floor(Math.log(down) / Math.log(10)));
@@ -861,7 +841,8 @@
 												return self.barLength * d.upExponent * 0.1;})
 											.attr('fill', self.color.upExponent)
 											.attr('stroke-width', 0.3)
-											.attr('stroke', '#000');
+											.attr('stroke', '#000')
+											.call($P.tooltip.add(function(d, i) {return d.up;}));
 										expressionBar.append('rect')
 											.attr('class', 'upDigit')
 											.attr('x', function(d) {return r(d.r);})
@@ -873,7 +854,8 @@
 												return self.barLength * d.upDigit * 0.1;})
 											.attr('fill', self.color.upDigit)
 											.attr('stroke-width', 0.3)
-											.attr('stroke', '#000');
+											.attr('stroke', '#000')
+											.call($P.tooltip.add(function(d, i) {return d.up;}));
 										expressionBar.append('rect')
 											.attr('class', 'downExponent')
 											.attr('x', function(d) {return r(d.r);})
@@ -885,7 +867,8 @@
 												return self.barLength * d.downExponent * 0.1;})
 											.attr('fill', self.color.downExponent)
 											.attr('stroke-width', 0.3)
-											.attr('stroke', '#000');
+											.attr('stroke', '#000')
+											.call($P.tooltip.add(function(d, i) {return d.down;}));
 										expressionBar.append('rect')
 											.attr('class', 'down')
 											.attr('x', function(d) {return r(d.r);})
@@ -897,17 +880,17 @@
 												return self.barLength * d.downDigit * 0.1;})
 											.attr('fill', self.color.downDigit)
 											.attr('stroke-width', 0.3)
-											.attr('stroke', '#000');}
+											.attr('stroke', '#000')
+											.call($P.tooltip.add(function(d, i) {return d.down;}));}
 
 									else {
 										nodes.forEach(function(d, i) {
-											var symbolCount;
 											d.thickness = Math.min(d.theta * d.radius * 0.8, 20);
-											symbolCount = 0;
-											if (d.gallusOrth) {symbolCount = d.gallusOrth.sharedSymbols.length;}
-											d.exponent = Math.floor(Math.log(symbolCount) / Math.log(10));
+											d.symbolCount = 0;
+											if (d.gallusOrth) {d.symbolCount = d.gallusOrth.sharedSymbols.length;}
+											d.exponent = Math.floor(Math.log(d.symbolCount) / Math.log(10));
 											if (d.exponent < 0) {d.exponent = 0;}
-											d.digit = symbolCount / Math.pow(10, d.exponent);});
+											d.digit = d.symbolCount / Math.pow(10, d.exponent);});
 										var maxExponent = Math.floor(Math.log(maxSymbol || 1) / Math.log(10));
 										var groupCrosstalkBars = self.graphGroup.append('g').attr('id', 'group-crosstalk-bars');
 										var crosstalkBar = groupCrosstalkBars.selectAll('.crosstalk-bar').data(nodes).enter()
@@ -929,7 +912,8 @@
 												return self.barLength * d.exponent * 0.1;})
 											.attr('fill', '#f22')
 											.attr('stroke-width', 0.3)
-											.attr('stroke', '#000');
+											.attr('stroke', '#000')
+											.call($P.tooltip.add(function(d, i) {return d.symbolCount;}));
 										crosstalkBar.append('rect')
 											.attr('class', 'digit')
 											.attr('x', function(d) {return r(d.r);})
@@ -940,7 +924,8 @@
 												return self.barLength * d.digit * 0.1;})
 											.attr('fill', '#fb8')
 											.attr('stroke-width', 0.3)
-											.attr('stroke', '#000');}
+											.attr('stroke', '#000')
+											.call($P.tooltip.add(function(d, i) {return d.symbolCount;}));}
 
 									var textG = gGroup.append('g').selectAll('.text').data(nodeData.filter(
 										function (d, i) {
@@ -1002,6 +987,11 @@
 											sourceRing: self.parent,
 											w: 290, h: 400});
 										bubble.parent.add(table);
+										$P.state.scene.record({
+											type: 'tree-ring-bar-click',
+											dbId: datum.dbId,
+											name: datum.name,
+											sourceRing: self.parent.name});
 
 										var angle = datum.angle * Math.PI / 180,
 												offset = r(datum.r + datum.dr * 0.8);
@@ -1072,6 +1062,12 @@
 											w: 560, h: 400});
 										bubble.parent.add(table);
 
+										$P.state.scene.record({
+											type: 'tree-ring-expression-bar-click',
+											dbId: d3datum.dbId,
+											name: d3datum.name,
+											sourceRing: self.parent.name});
+
 										angle = d3datum.angle * Math.PI / 180;
 										offset = r(d3datum.r + d3datum.dr * 0.8);
 										d3datum.outsideEdge = new $P.Vector2D(
@@ -1138,26 +1134,9 @@
 												return 5;
 											})
 											.style('fill','yellow')
-											.on('mouseover', function (d, i) {
-												if (d.name == 'homo sapiens')
-													return;
-												tooltip.html(function () {
-													return format_name(d);
-												});
-												return tooltip.transition()
-													.duration(50)
-													.style('opacity', 0.8);
-											})
-											.on('mousemove', function (d, i) {
-												if (d.name == 'homo sapiens')
-													return;
-												return tooltip
-													.style('top', (d3.event.pageY - 10 - _this.parent.y - 70 ) + 'px')
-													.style('left', (d3.event.pageX + 10 - _this.parent.x) + 'px');
-											})
-											.on('mouseout', function () {
-												return tooltip.style('opacity', 0);
-											})
+											.call($P.tooltip.add(function(d, i) {
+												if ('homo sapiens' === d.name) {return null;}
+												return format_name(d);}))
 											.style('opacity', 0.8);
 									}
 									function processTextLinks(nodes) {
@@ -1212,7 +1191,7 @@
 											.attr('text-anchor', 'middle')
 											.style('font-size', rect_height + 1)
 											.style('font-weight', 'bold')
-											.text('Top Level Pathways:');
+											.text('Pathways:');
 
 										inodeText = inodeText.append('text')
 											.attr('id', function (d) {
@@ -1354,6 +1333,11 @@
 											sourceRing: self.parent,
 											w: 650, h: 400});
 										bubble.parent.add(table);
+										$P.state.scene.record({
+											type: 'tree-ring-right-click',
+											dbId: datum.dbId,
+											name: datum.name,
+											sourceRing: self.parent.name});
 
 										$P.state.scene.addLink(
 											new $P.BubbleLink({
@@ -1400,6 +1384,13 @@
 													datum: d3.select(this).datum()}),
 												target: new $P.BubbleLink.End({object: ringBubble})
 											}));
+
+										console.log(selectedData);
+										$P.state.scene.record({
+											type: 'tree-ring-click',
+											dbId: selectedData.dbId,
+											name: selectedData.name,
+											sourceRing: self.name});
 
 										if (self.customOrtholog) {
 											ringBubble.svg.customOrtholog = _this.customOrtholog;
@@ -1612,7 +1603,32 @@
 					this.crosstalkLegend.select('#exponent-end-label').attr('x', 51.5 + value);
 					this.crosstalkLegend.select('#digit-bar').attr('width', value);
 					this.crosstalkLegend.select('#digit-end-mark').attr('x', 54.5 + value);
-					this.crosstalkLegend.select('#digit-end-label').attr('x', 51.5 + value);}}
+					this.crosstalkLegend.select('#digit-end-label').attr('x', 51.5 + value);}},
+
+			getPersistData: function() {
+				var persist = {
+					defaultRadius: this.defaultRadius,
+					dataName: this.name,
+					dataType: this.dataType,
+					file: this.file,
+					customOrtholog: this.customOrtholog,
+					// Too many circular references for now.
+					//selectedData: this.selectedData,
+					customExpression: this.customExpression,
+					maxLevel: this.maxLevel,
+					crosstalkSymbols: this.crosstalkSymbols,
+					rateLimitSymbols: this.rateLimitSymbols,
+					highlightPathways: this.highlightPathways,
+					displayMode: this.displayMode,
+					localExpressionPercent: this.localExpressionPercent,
+					orthologFile: this.orthologFile,
+					expressionFile: this.expressionFile,
+					fisher: this.fisher,
+					nodeTextSize: this.nodeTextSize
+				};
+				if (persist.selectedData) {
+					delete persist.selectedData.parent;}
+				return persist;}
 		});
 
 	$P.D3TreeRing.BubbleLinkEnd = $P.defineClass(
@@ -1626,7 +1642,7 @@
 			get x() {
 				var box = this.ring.svg,
 						limits = this.ring.getInteriorDimensions(),
-						x = box.centerX + box.zoomTranslate[0]
+						x = box.centerX + (box.zoomTranslate ? box.zoomTranslate[0]: 0)
 							+ this.datum.outsideEdge.x * box.zoomScale;
 				if (x < limits.x) {x = limits.x;}
 				if (x > limits.x + limits.w) {x = limits.x + limits.w;}
@@ -1634,7 +1650,7 @@
 			get y() {
 				var box = this.ring.svg,
 						limits = this.ring.getInteriorDimensions(),
-						y = box.centerY + box.zoomTranslate[1]
+						y = box.centerY + (box.zoomTranslate ? box.zoomTranslate[1] : 0)
 							+ this.datum.outsideEdge.y * box.zoomScale;
 				if (y < limits.y) {y = limits.y;}
 				if (y > limits.y + limits.h) {y = limits.y + limits.h;}

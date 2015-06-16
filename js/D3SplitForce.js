@@ -30,14 +30,32 @@
 				if ('down' === this.expression[symbol]) {return 'cyan';}
 				return 'white';},
 
-			addPathway: function(pathwayId, pathwayName, expressions) {
+			addPathway: function(pathway) {
 				var self = this;
 				function onFinish() {
-					console.log(self.layout);
+					$P.state.scene.record({
+						type: 'pathway-added',
+						id: pathway.pathwayId,
+						name: pathway.pathwayName,
+						bubble: self});
 					self.layout.consolidateComposite();
 					//self.layout.consolidateReactions();
-					self.pathways.push({id: pathwayId, name: pathwayName, expressions: expressions});
-					self.svg.remove();
+
+					pathway = $.extend({}, pathway, {type: 'pathway'});
+					self.pathways.push(pathway);
+
+					if (undefined === pathway.color) {
+						var colors = $P.BubbleBase.colors.slice(0), color, p;
+						for (p in self.pathways) {
+							$P.removeFromList(colors, self.pathways[p].color);}
+						if (0 === colors.length) {
+							pathway.color = '#666';}
+						else if (-1 !== colors.indexOf(pathway.strokeStyle)) {
+							pathway.color = pathway.strokeStyle;}
+						else {
+							pathway.color = colors[0];}}
+
+					if (self.svg) {self.svg.remove();}
 					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 					self.svg.main = self.svg.append('g').attr('id', 'main');
 					self.svg.defs = self.svg.append('defs');
@@ -46,9 +64,7 @@
 					self.createLegend();
 
 					self.layout.setPathways(self.pathways);
-					if (1 === self.pathways.length) {self.layoutSingle();}
-					if (2 === self.pathways.length) {self.layoutMirror();}
-					if (2 < self.pathways.length) {self.layoutRadial();}
+					self.layoutSplit();
 					self.updateSvgPosition();
 					console.log(self.layout.force);
 					self.layout.force.start();
@@ -61,7 +77,6 @@
 				$P.getJSON(
 					'./php/get_entities.php',
 					function (jsonData) {
-						console.log(jsonData);
 						if (jsonData.entities) {
 							$.each(jsonData.entities, function(entityId, entity) {
 								entity.klass = 'entity';
@@ -73,7 +88,13 @@
 						onFinish();},
 					{type: 'GET', data: {
 						mode: 'reactome_pathway_id',
-						id: pathwayId}});},
+						id: pathway.pathwayId}});},
+
+			layoutSplit: function() {
+				if (this.display) {this.display.delete();}
+				if (1 === this.pathways.length) {this.layoutSingle();}
+				if (2 === this.pathways.length) {this.layoutMirror();}
+				if (2 < this.pathways.length) {this.layoutRadial();}},
 
 			layoutSingle: function() {
 				this.display = new $P.ForceDisplay({
@@ -106,6 +127,17 @@
 						radius: Math.max(this.w, this.h)}),
 					viewArgs: this.pathways,
 					viewConstructor: $P.PathwayForceView});},
+
+			layoutSoup: function() {
+				if (this.display) {this.display.delete();}
+				this.display = new $P.ForceDisplay({
+					svg: this.svg,
+					parent: this.svg.main,
+					parentBubble: this.parent,
+					layout: this.layout,
+					shape: new $P.ForceShape.Centered({w: this.w, h: this.h, count: 1}),
+					viewArgs: [{type: 'pathways', list: this.pathways}],
+					viewConstructor: $P.SoupForceView});},
 
 			onPositionChanged: function(dx, dy, dw, dh) {
 				$P.HtmlObject.prototype.onPositionChanged.call(this, dx, dy, dw, dh);

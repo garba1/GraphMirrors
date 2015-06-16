@@ -69,6 +69,8 @@ $P.Shape.Rectangle = $P.defineClass(
 	 * @param {number} config.h
 	 */
 	function Rectangle(config) {
+		if (!(this instanceof Rectangle)) {return new Rectangle(config);}
+
 		var highlight;
 
 		config.x = config.x || 0;
@@ -84,7 +86,8 @@ $P.Shape.Rectangle = $P.defineClass(
 		highlight = config.highlight || {};
 		this.highlight = {
 			strokeStyle: highlight.strokeStyle || '#ff0',
-			lineWidth: highlight.lineWidth || this.lineWidth * 2};},
+			lineWidth: highlight.lineWidth || this.lineWidth * 2};
+		return this;},
 	{
 		/**
 		 * Sets this object as the current path of the context.
@@ -143,10 +146,7 @@ $P.Shape.Rectangle = $P.defineClass(
 		 * @param {number} bottom - the amount to expand the bottom edge by
 		 */
 		expandEdges: function(right, top, left, bottom) {
-			this.x -= left;
-			this.y -= top;
-			this.w += left + right;
-			this.h += top + bottom;},
+			this.translate(-left, -top, left + right, top + bottom);},
 		drawSelf: function (ctx, scale, arg) {
 			this.doPath(ctx, scale, arg);
 			ctx.strokeStyle = this.strokeStyle;

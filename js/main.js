@@ -75,18 +75,41 @@
 			$('#bubble').contextMenu({
 				selector: '#bgCanvas',
 				callback: function (key) {
-					var bubble;
+					var bubble, state, objects;
 					if (key === 'Open_TreeRing') {
 						$P.state.scene.add(new $P.TreeRing({
 							x: mousePosX + $P.state.scrollX, y: mousePosY, w: 820, h: 700,
 							dataName: 'human'}));}
 					else if ('save' === key) {
-						$.cookie('graphmirrors.save', JSON.stringify($P.state.scene.getPersistObject()));}
+						state = $P.state.scene.getPersistObject();
+						objects = {};
+						function replacer(key, value) {
+							if (value && ('object' === typeof value) && value.__persist) {
+								objects[value.id] = value;
+								return {__object_id: value.id};}
+							return value;}
+						window.localStorage.setItem('graphmirrors.save', JSON.stringify(state, replacer));
+						console.log(objects);
+						window.localStorage.setItem('graphmirrors.save.objects', JSON.stringify(objects));}
 					else if ('load' === key) {
-						$P.state.scene.deleteAll();
-						var state = JSON.parse($.cookie('graphmirrors.save'));
-						console.log(state);
-					}
+						function objectReviver(key, value) {
+							console.log('revive', 'key', key, 'value', value);
+							var config = value.config;
+							config.reviving = true;
+							var object = $P[value.class].call(null, value.config);
+							if (object.loadPersistObject) {
+								object.loadPersistObject();}
+							return object;}
+						objects = JSON.parse(window.localStorage.getItem('graphmirrors.save.objects'), objectReviver);
+						state = window.localStorage.getItem('graphmirrors.save');
+						console.log('LOAD', state);
+						function reviver(key, value) {
+							if ('object' === typeof value && value.__object_id) {
+								return objects[value.__object_id];}
+							return value;}
+						$P.state.scene.loadPersistObject(JSON.parse(state, reviver));}
+					else if ('record' === key) {
+						$P.state.scene.recording = [];}
 					else if ('split' === key) {
 						bubble = new $P.SplitForce({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 750, h: 600});
 						$P.state.scene.add(bubble);}
@@ -108,8 +131,10 @@
 				},
 				items: {
 					'split': {name: 'Open Split Diagram'},
-					save: {name: 'Save'},
-					load: {name: 'Load'},
+					'open_force': {name: 'Open Soup Diagram'},
+					//save: {name: 'Save'},
+					//load: {name: 'Load'},
+					record: {name: 'Start Recording'},
 					'Open_TreeRing': {name: 'Open Entire Pathway'},
 					'Delete_All': {name: 'Delete All'},
 					'Open_Help': {name: 'Open Help'},

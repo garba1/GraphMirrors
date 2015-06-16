@@ -4,6 +4,9 @@
 	$P.TreeRing = $P.defineClass(
 		$P.BubbleBase,
 		function TreeRing(config) {
+			if (!(this instanceof TreeRing)) {return new TreeRing(config);}
+			this.class = 'TreeRing';
+
 			this.processingStatus = new PATHBUBBLES.Text(this, "Processing");
 
 			this.dataName = config.dataName || null;
@@ -32,12 +35,13 @@
 			if (this.expressionFile) {this.expressionLabel = this.expressionFile.name;}
 			config.name = config.name
 				|| (config.selectedData && config.dataName)
-				|| ((this.expressionFile ? '' : 'Human vs. ') + this._species);
+				|| this._species;
 			if (undefined === config.minSize) {config.minSize = 'current';}
 			if (!config.h || config.h < 560) {config.h = 560;}
 			if (!config.w || config.w < 700) {config.w = 700;}
 			$.extend(config, {mainMenu: true, closeMenu: true, groupMenu: true});
-			$P.BubbleBase.call(this, config);},
+			$P.BubbleBase.call(this, config);
+			return this;},
 		{
 			get minRatio() {return this._minRatio;},
 			set minRatio(value) {
@@ -68,7 +72,7 @@
 			set species(value) {
 				if (value === this._species) {return;}
 				this._species = value;
-				if (!this.selectedData) {this.title.name = 'Human vs. ' + value;}
+				if (!this.selectedData) {this.title.name = value;}
 				if (this.menu) {this.menu.species = value;}
 				if (this.svg) {
 					this.createSvg({
@@ -99,8 +103,9 @@
 				this._fisher = value;
 				if (this.menu) {this.menu.fisher = value;}
 				this.createSvg({fisher: value});},
-			onAdded: function(parent) {
-				if (!$P.BubbleBase.prototype.onAdded.call(this, parent) && !this.svg) {
+			afterAdded: function(parent) {
+				$P.BubbleBase.prototype.afterAdded.call(this, parent);
+				if (!this.svg) {
 					this.createSvg();
 					this.displayHints();}},
 
@@ -140,8 +145,7 @@
 				this.svg = new $P.D3TreeRing(actual_config);
 				this.svg.init();
 
-				this.name = (this.selectedData && this.dataName)
-					|| ((this.expressionFile ? '' : 'Human vs. ') + this._species);
+				this.name = (this.selectedData && this.dataName) || this._species;
 			},
 			/**
 			 * Removes the svg component.
@@ -217,7 +221,18 @@
 					top: this.y + this.h / 2 - this.treeRing.defaultRadius / 2 + 50 - 20 + space / 2
 				});
 			},
-			drawExtra: function(ctx, scale) {this.processingStatus.draw(ctx, this.x+this.w/2, this.y+this.h/2);}
+			drawExtra: function(ctx, scale) {this.processingStatus.draw(ctx, this.x+this.w/2, this.y+this.h/2);},
+
+			getPersistObject: function(info) {
+				var persist = $P.BubbleBase.prototype.getPersistObject.call(this, info);
+				persist.svg = this.svg.getPersistData();
+				delete persist.config.selectedData;
+				return persist;},
+
+			loadPersistObject: function(persist) {
+				$P.BubbleBase.prototype.loadPersistObject.call(this, persist);
+				this.createSvg(persist.svg);}
+
 		});
 
 	$P.TreeRing.Menu = $P.defineClass(
@@ -409,7 +424,7 @@
 						highlightPathways: null,
 						dataType: bubble.species};
 					bubble.orthologLabel = bubble.selectedFile.name;
-					if (!bubble.selectedData) {bubble.title.name = 'Human vs. Custom';}
+					if (!bubble.selectedData) {bubble.title.name = 'Custom';}
 					bubble.experimentType = 'Ortholog';
 					bubble.createSvg(config);
 					$(menu.element).find('#speciesBlock').hide();});},
@@ -442,14 +457,6 @@
 					bubble.experimentType = 'Expression';
 					bubble.createSvg(config);
 					$(menu.element).find('#fisherBlock').show();
-					$(menu.element).find('#localPercentBlock').show();});},
-			onPositionChanged: function (dx, dy, dw, dh) {
-				$P.HtmlMenu.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
-			},
-
-			getPersistObject: function() {
-				return {class: 'TreeRing',
-								config: this.config};}
-
+					$(menu.element).find('#localPercentBlock').show();});}
 		});
 })(PATHBUBBLES);

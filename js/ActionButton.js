@@ -33,6 +33,8 @@ $P.ActionButton = $P.defineClass(
 		this.action = config.action || base.action || function(){};
 		this.setHighlighted = config.setHighlighted || base.setHighlighted || function(){};
 
+		if (undefined !== config.tooltip) {this.tooltip = config.tooltip;}
+
 		text = config.text || '';
 		if (text instanceof $P.Text) {text = text.text;}
 		this.canPress = config.canPress || base.canPress || function() {return true;};
@@ -42,7 +44,8 @@ $P.ActionButton = $P.defineClass(
 			r: 5,
 			text: text,
 			fontSize: config.fontSize || base.fontSize || 9,
-			parent: this});},
+			parent: this});
+	},
 	{
 		clone: function() {return new $P.ActionButton(this);},
 		receiveEvent: function(event) {

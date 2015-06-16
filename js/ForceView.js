@@ -77,7 +77,12 @@
 					.attr('y2', function(link) {return link.target.y;});
 
 				this.element.selectAll('*').each(function(d, i) {
-					if (this.onTick) {this.onTick(d, i);}});}
+					if (this.onTick) {this.onTick(d, i);}});},
+
+			delete: function() {
+				this.element.remove();
+				this.background.remove();}
+
 		});
 
 	$P.ForceView.nextId = 0;

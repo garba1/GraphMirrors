@@ -68,7 +68,11 @@
 					.attr('x1', function(d) {return d.x1;})
 					.attr('y1', function(d) {return d.y1;})
 					.attr('x2', function(d) {return d.x2;})
-					.attr('y2', function(d) {return d.y2;});}
+					.attr('y2', function(d) {return d.y2;});},
+
+			delete: function() {
+				this.parent.selectAll('.divider').remove();
+				this.views.forEach(function(view) {view.delete();});}
 		});
 
 })(PATHBUBBLES);

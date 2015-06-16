@@ -87,6 +87,8 @@ $P.Object2D = $P.defineClass(
 
 				child.parent = this;
 
+				child.afterAdded(this);
+
 				if ($P.state) {$P.state.markDirty();}
 				return position;}
 
@@ -99,6 +101,8 @@ $P.Object2D = $P.defineClass(
 		 * @returns {boolean} - if true, do not add
 		 */
 		onAdded: function(parent) {},
+
+		afterAdded: function(parent) {},
 
 		/**
 		 * Removes an object by identity.
@@ -297,7 +301,21 @@ $P.Object2D = $P.defineClass(
 		findChild: function(predicate) {
 			return $P.or(this.children, function(child) {
 				if (predicate(child)) {return child;}
-				return child.findChild(predicate);});}
+				return child.findChild(predicate);});},
+
+		loadPersistObject: function(persist) {
+			var self = this;
+			if (persist.children) {
+				persist.children.forEach(function(p) {
+					var config = p.config;
+					config.fromPersist = true;
+					config.parent = self;
+					var object = $P[p.class].call(null, config);
+					if (object.loadPersistObject) {
+						object.loadPersistObject(p);}
+				});}
+		}
+
 	});
 
 

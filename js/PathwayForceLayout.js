@@ -21,7 +21,6 @@
 			this.nextLocationColor = 0;
 		},
 		{
-			//locationColors: ['red', 'green', 'blue', 'orange', 'yellow', 'purple', 'teal', 'gray'],
 			locationColors: [
 				'#8dd3c7',
 				'#ffffb3',
@@ -75,18 +74,6 @@
 						linkDistance: 5,
 						linkStrength: 1.0});}
 
-				/*
-				if ('Complex' === entity.type) {
-					entity.components.forEach(function(component) {
-						self.applyToNode('entity:' + component, function(component) {
-							self.addLink({
-								source: entity, target: component,
-								id: entity.id + ':' + component.id,
-								klass: 'entity:component',
-								linkDistance: 30,
-								linkStrength: 0.2});});});}
-				 */
-
 				if (entity.location) {
 					// Ensure Location.
 					node = this.getNode('location:' + entity.location);
@@ -101,20 +88,6 @@
 							charge: -120,
 							x: 0, y: 0};
 						this.addNode(node);
-
-						// Add links between locations to separate them.
-						/*
-						this.getNodes('location').forEach(function(other) {
-							if (node === other) {return;}
-							self.addLink({
-								source: node, target: other,
-								id: node.id + '|' + other.id,
-								klass: 'location:location:',
-								linkStrength: 0.01});});
-						var count = this.getNodes('location').length;
-						this.getLinks('location:location').forEach(function(link) {
-							link.linkDistance = 50 + 15 * count;});
-						 */
 					}
 
 					node.entities.push(entity);
@@ -179,13 +152,6 @@
 						self.addLink(link);
 					});}
 			},
-			/*removeNode: function(layoutId) {
-				var node = this.getNode(layoutId);
-				if (!$P.ForceLayout.prototype.removeNode.call(this, layoutId)) {return;};
-				if ('entity' === node.klass) {
-					this.removeNode('entitylabel:' + this.id);
-					this.removeLink('entity:location:' + this.id);
-					this.removeLink('entity:label:' + this.id);}},*/
 			addLink: function(link) {
 				$P.ForceLayout.prototype.addLink.call(this, link);
 				return link;},
@@ -193,7 +159,7 @@
 				this.getNodes('entity').forEach(function(entity) {
 					var count = 0;
 					pathways.forEach(function(pathway) {
-						if (entity.pathways[pathway.id]) {++count;}});
+						if (entity.pathways[pathway.pathwayId]) {++count;}});
 					entity.crosstalkCount = count;
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);
 				});},

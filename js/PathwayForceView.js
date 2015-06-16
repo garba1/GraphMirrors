@@ -12,17 +12,11 @@
 
 			textTransform = self.shape.textTransform(self);
 
-			self.pathway = config.displayArgument || null;
-			console.log(self.pathway);
-
-			// Center Mark.
-			/*self.element.append('rect')
-				.attr('fill', 'red')
-				.attr('x', -20)
-				.attr('y', -20)
-				.attr('width', 40)
-				.attr('height', 40)
-				.attr('pointer-events', 'none');*/
+			if (config.displayArgument) {
+				if ('pathway' === config.displayArgument.type) {
+					self.pathway = config.displayArgument;}
+				else if ('pathways' === config.displayArgument.type) {
+					self.pathways = config.displayArgument.list;}}
 
 			function nodeSize(target) {
 				return function(d) {return target * 1.5;};
@@ -56,11 +50,13 @@
 						reaction = node.reactions[i];
 						entities = Object.keys(reaction.entities);
 						for (j = 0; j < entities.length; ++j) {
-							entity = self.visibleEntities.indexed['entity:'+entities[j]];
-							if (entity && (!entity.pathways || entity.pathways[parseInt(self.pathway.id)])) {
-										return true;}}}}
+							entity = self.visibleEntities1.indexed['entity:'+entities[j]];
+							if (entity && self.inPathway(entity)) {return true;}}}}
 				if (!node.pathways || node.pathways[parseInt(self.pathway.id)]) {return true;}
 				return false;}
+
+			function diminishedEntityFilter(node) {
+				return !self.visibleEntities.indexed[node.layoutId];}
 
 			function entitylabelFilter(node) {
 				if ('entitylabel' !== node.klass) {return false;}
@@ -71,7 +67,7 @@
 				if ('reaction' !== node.klass) {return false;}
 				entities = Object.keys(node.entities);
 				for (i = 0; i < entities.length; ++i) {
-					if (self.visibleEntities.indexed['entity:'+entities[i]]) {
+					if (self.visibleEntities1.indexed['entity:'+entities[i]]) {
 						return true;}}
 				return false;}
 
@@ -95,19 +91,23 @@
 					|| self.visibleLocations.indexed[id]
 					|| self.visiblePapers.indexed[id];}
 
-			self.visibleEntities = self.layout.nodes.filter(entityFilter1);
-			self.visibleEntities.indexed = $P.indexBy(self.visibleEntities, $P.getter('layoutId'));
-			self.visibleEntitylabels = self.layout.nodes.filter(entitylabelFilter);
-			self.visibleEntitylabels.indexed = $P.indexBy(self.visibleEntitylabels, $P.getter('layoutId'));
+			$P.a=self;
+
+			self.visibleEntities1 = self.layout.nodes.filter(entityFilter1);
+			self.visibleEntities1.indexed = $P.indexBy(self.visibleEntities1, $P.getter('layoutId'));
 			self.visibleReactions = self.layout.nodes.filter(reactionFilter);
 			self.visibleReactions.indexed = $P.indexBy(self.visibleReactions, $P.getter('layoutId'));
-			self.visibleEntities = self.visibleEntities.filter(entityFilter2);
+			self.visibleEntities = self.visibleEntities1.filter(entityFilter2);
 			self.visibleEntities.indexed = $P.indexBy(self.visibleEntities, $P.getter('layoutId'));
+			self.diminishedEntities = self.visibleEntities1.filter(diminishedEntityFilter);
+			self.diminishedEntities.indexed = $P.indexBy(self.diminishedEntities, $P.getter('layoutId'));
+			self.visibleEntitylabels = self.layout.nodes.filter(entitylabelFilter);
+			self.visibleEntitylabels.indexed = $P.indexBy(self.visibleEntitylabels, $P.getter('layoutId'));
 			self.visibleLocations = self.layout.nodes.filter(locationFilter);
 			self.visibleLocations.indexed = $P.indexBy(self.visibleLocations, $P.getter('layoutId'));
 			self.visiblePapers = self.layout.nodes.filter(paperFilter);
 			self.visiblePapers.indexed = $P.indexBy(self.visiblePapers, $P.getter('layoutId'));
-			self.visibleNodes = [].concat(self.visibleEntities, self.visibleEntitylabels, self.visibleReactions, self.visibleLocations, self.visiblePapers);
+			self.visibleNodes = [].concat(self.visibleEntities, self.visibleEntitylabels, self.visibleReactions, self.visibleLocations, self.visiblePapers, self.diminishedEntities);
 
 			self.visibleLinks = self.layout.links.filter(function(link) {
 				//if (link.klass === 'entity:label') {console.log(link, link.source, link.target, isNodeVisible(link.source),  isNodeVisible(link.target));}
@@ -186,8 +186,8 @@
 						if (!this.displayElement) {return;}
 						var rect = this.getBoundingClientRect();
 						this.displayElement.move(
-							(rect.left + rect.right) * 0.5 + $P.state.scrollX,
-							(rect.top + rect.bottom) * 0.5 - 50,
+							(rect.left + rect.right) * 0.5 + $P.state.scrollX + 5,
+							(rect.top + rect.bottom) * 0.5 - 50 + 5,
 							350,
 							300);
 						if (self.parentBubble.contains(this.displayElement.x, this.displayElement.y)) {
@@ -202,12 +202,12 @@
 								node.sentences = false;
 								return;}
 							var text = '';
-							text += '<b>Authors:</b> ' + data.authors + '<br/>';
-							text += '<b>Publication:</b> ' + data.publication + '<br/>';
 							text += '<ol>';
 							data.sentenceArray.forEach(function(sentence) {
 								text += '<li>' + sentence.sentence + '</li>';});
 							text += '</ol>';
+							text += '<b>Authors:</b> ' + data.authors + '<br/>';
+							text += '<b>Publication:</b> ' + data.publication + '<br/>';
 							node.text = text;
 							if (node.displayElement) {
 								node.displayElement.element.innerHTML = node.text;}});}
@@ -222,8 +222,8 @@
 								class: 'frame',
 								pointer: null,
 								objectConfig: {
-									x: (rect.left + rect.right) * 0.5 + $P.state.scrollX,
-									y: (rect.top + rect.bottom) * 0.5 - 50,
+									x: (rect.left + rect.right) * 0.5 + $P.state.scrollX + 5,
+									y: (rect.top + rect.bottom) * 0.5 - 50 + 5,
 									w: 300,
 									h: 300}});
 							if (node.lockTooltip) {
@@ -255,6 +255,12 @@
 						this.displayElement = null;}
 				})
 				.on('click', function(d, i) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
 					this.lockTooltip = !this.lockTooltip;
 					if (this.displayElement) {
 						if (this.lockTooltip) {
@@ -262,6 +268,12 @@
 						else {
 							$(this.displayElement.element).removeClass('pinned');}}})
 				.on('contextmenu', function(d) {
+					$P.state.scene.record({
+						type: 'force-right-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
 					console.log(d);
 					self.parentBubble.parent.add(new $P.IFrameBubble({
 						w: 1200,
@@ -280,7 +292,14 @@
 				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
 				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			self.reactions.phosphorylated.append('rect')
 				.attr('stroke', 'black')
@@ -288,25 +307,36 @@
 				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
 				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			self.entities = self.nodes.filter(function(d, i) {return 'entity' === d.klass;});
-			self.entities.proteins = self.entities.filter(function(d, i) {
+			self.entities.diminished = self.entities.filter(function(d, i) {
+				return !self.inPathway(d);});
+			self.entities.visible = self.entities.filter(function(d, i) {
+				return self.inPathway(d);});
+			self.entities.proteins = self.entities.visible.filter(function(d, i) {
 				var type = d.type && d.type.toLowerCase();
 				return 'protein' == type;});
 			self.entities.proteins.composite = self.entities.proteins.filter(
 				function(d, i) {return d.componentNodes;});
 			self.entities.proteins.crosstalking = self.entities.proteins.filter(
 				function(d, i) {return d.crosstalkCount > 1;});
-			self.entities.small = self.entities.filter(function(d, i) {
+			self.entities.small = self.entities.visible.filter(function(d, i) {
 				return 'SmallMolecule' === d.type
 					|| 'Rna' === d.type
 					|| 'Dna' === d.type;});
-			self.entities.complex = self.entities.filter(
+			self.entities.complex = self.entities.visible.filter(
 				function(d, i) {return 'Complex' == d.type;});
 			self.entities.complex.composite = self.entities.complex.filter(
 				function(d, i) {return d.componentNodes;});
-			self.entities.other = self.entities.filter(
+			self.entities.other = self.entities.visible.filter(
 				function(d, i) {
 					return 'Complex' !== d.type
 						&& 'SmallMolecule' !== d.type
@@ -369,6 +399,25 @@
 				.attr('x', nodeSize(-7)).attr('y', nodeSize(-5))
 				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3));
 			// The main circle.
+			self.entities.diminished
+				.append('rect')
+				.attr('stroke', 'black')
+				.attr('fill', 'gray')
+				.attr('width', nodeSize(4)).attr('height', nodeSize(4))
+				.attr('x', nodeSize(-1.5)).attr('y', nodeSize(-1.5))
+				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3))
+				.attr('pointer-events', 'all')
+				.attr('transform', textTransform)
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						diminished: true,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
+				.append('title').text(nodeTitle);
 			self.entities.proteins
 				.append('rect')
 				.attr('stroke', 'black')
@@ -378,7 +427,14 @@
 				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3))
 				.attr('pointer-events', 'all')
 				.attr('transform', textTransform)
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			self.entities.proteins.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
 				.append('circle')
@@ -390,7 +446,14 @@
 					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';
 				})
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			// Small Molecules.
 			self.entities.small
@@ -401,7 +464,14 @@
 				.attr('x', nodeSize(-2.5))
 				.attr('y', nodeSize(-2.5))
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			// Complex.
 			self.entities.complex
@@ -412,7 +482,14 @@
 				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
 				.attr('transform', textTransform + 'rotate(45)')
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			self.entities.complex.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
 				.append('circle')
@@ -423,7 +500,14 @@
 					var pd = d3.select(this.parentNode).datum();
 					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';})
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 
 			// Other
@@ -435,7 +519,14 @@
 				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
 				.attr('transform', textTransform)
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 			self.entities.complex.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
 				.append('circle')
@@ -446,7 +537,14 @@
 					var pd = d3.select(this.parentNode).datum();
 					return 'rotate(' + (i * 360 / pd.componentNodes.length) + ')translate(' + nodeSize(8)(pd) + ')';})
 				.attr('pointer-events', 'all')
-				.on('click', function(d) {console.log(d);})
+				.on('click', function(d) {
+					$P.state.scene.record({
+						type: 'force-click',
+						class: d.klass,
+						id: d.layoutId,
+						name: d.name,
+						source: self.parentBubble});
+					console.log(d);})
 				.append('title').text(nodeTitle);
 
 			self.entityLabels = self.nodes.filter(
@@ -466,30 +564,73 @@
 				.attr('stroke-opacity', 0.2)
 				.attr('fill', 'none');
 
-			self.label = self.root.append('text')
+			self.nameLabel = self.pathway ? self.pathway.name : '';
+			self.label = self.root.append('g');
+			self.label.back = self.label.append('rect')
+				.style('stroke', 'black')
+				.style('stroke-width', 2)
+				.style('opacity', self.pathway ? 0.6 : 0)
+				.style('fill', self.pathway && self.pathway.color);
+			self.label.text = self.label.append('text')
 				.style('font-size', '14px')
 				.style('font-weight', 'bold')
+				.style('stroke-width', 1)
 				.attr('fill', 'black')
 				.attr('text-anchor', 'middle')
 				.attr('dominant-baseline', 'middle')
 				.attr('opacity', 1.0)
-				.text(self.pathway.name);
-
-
+				.text(self.nameLabel);
 		},
 		{
-			getExpression: function(node) {return this.pathway.expressions[node.name];},
+			inPathway: function(node) {
+				if (!this.pathway && !this.pathways) {return true;}
+
+				if ('entity' === node.klass) {
+					if (!node.pathways) {return true;}
+					function check(pathway) {
+						return node.pathways[parseInt(pathway.id)];}
+					if (this.pathway && check(this.pathway)) {return true;}
+					if (this.pathways && this.pathways.some(check)) {return true;}
+					return false;}
+
+				else if ('reaction' === node.klass) {
+					// TODE implement
+					return true;}
+
+				return false;},
+
+			getExpression: function(node) {
+				if (this.pathway) {
+					return this.pathway.expression[node.name];}
+				if (this.pathways) {
+					return $P.or(this.pathways, function(pathway) {
+						return pathway.expression[node.name];});}
+				return null;},
+
 			getExpressionColor: function(node) {
-				if ('up' === this.pathway.expressions[node.name]) {return '#CCCC00';}
-				if ('down' === this.pathway.expressions[node.name]) {return '#0000CC';}
+				var expression = this.getExpression(node);
+				if ('up' === expression) {return '#CCCC00';}
+				if ('down' === expression) {return '#0000CC';}
 				return 'white';},
 			onShapeChange: function() {
 				$P.ForceView.prototype.onShapeChange.call(this);
 				if (this.label) {
 					var center = this.shape.getLabelPosition(this, 14),
-							angle = center.rotation || 0;
-					this.label.style('font-size', Math.min(14, center.length / this.pathway.name.length * 1.5) + 'px');
-					this.label.attr('transform', 'translate(' + center.x + ',' + center.y + ')rotate(' + angle + ')');}
+							angle = center.rotation || 0,
+							font = Math.min(14, center.length / this.nameLabel.length * 1.5);
+
+					this.label.attr('transform', 'translate(' + center.x + ',' + center.y + ')rotate(' + angle + ')');
+					this.label.back
+						.attr('width', (center.length + 4) + 'px')
+						.attr('x', (-center.length / 2 - 2) + 'px')
+						.attr('height', (font + 4) + 'px')
+						.attr('y', (-font / 2 - 2) + 'px');
+					this.label.text.style('font-size', font + 'px');}
+			},
+
+			delete: function() {
+				$P.ForceView.prototype.delete.call(this);
+				this.label.remove();
 			}
 		});
 })(PATHBUBBLES);

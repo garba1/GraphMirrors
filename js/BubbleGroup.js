@@ -10,19 +10,24 @@ var $P = PATHBUBBLES;
 
 $P.BubbleGroup = $P.defineClass(
 	$P.Object2D,
-	function BubbleGroup(child) {
-		$P.Object2D.call(this);
-		if (child) {
-			this.strokeStyle = child.strokeStyle;
-			this.x = child.x;
-			this.y = child.y;
-			this.add(child);}},
+	function BubbleGroup(config) {
+		var self = this;
+		if (!(this instanceof BubbleGroup)) {return new BubbleGroup(config);}
+		this.class = 'BubbleGroup';
+		$P.Object2D.call(this, config);
+		config.children = config.children || [];
+		config.children.forEach(function(child) {self.add(child);});
+		return this;},
 	{
 		get centerX() {
 			this.updateSize();
 			return this.x + this.w * 0.5;},
 
 		add: function(child, index) {
+			if (this.children.length === 0) {
+				this.strokeStyle = child.strokeStyle;
+				this.x = child.x;
+				this.y = child.y;}
 			$P.Object2D.prototype.add.call(this, child, index);
 			child.setStrokeStyle(this.strokeStyle);
 			this.arrangeChildren();
@@ -108,19 +113,9 @@ $P.BubbleGroup = $P.defineClass(
 			}.bind(this));
 		},
 
-		getPersistObject: function() {
-			var self = this,
-					state = {
-						class: 'BubbleGroup',
-						config: self.config,
-						children: []};
-			self.children.forEach(function(child) {
-				console.log('child:', child, child.getPersistObject);
-				if (child.getPersistObject) {
-					state.children.push(child.getPersistObject());}});
-			console.log(state);
-			return state;
-		}
+		getPersistObject: function(info) {
+			return $P.BubbleBase.prototype.getPersistObject.call(this, info);}
+
 
 	}
 );

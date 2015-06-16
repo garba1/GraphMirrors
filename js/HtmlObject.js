@@ -43,6 +43,7 @@ $P.HtmlObject = $P.defineClass(
 			var e = $(this.element);
 			$P.Object2D.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
 			e.css({
+				left: (this.x -$P.state.scrollX) + 'px',
 				top: (this.y + $P.state.mainCanvas.getLocation().y) + 'px'});
 			if (this.w && !this.ignoreW) {e.css('width', this.w + 'px');}
 			else {e.css('width', 'auto');}

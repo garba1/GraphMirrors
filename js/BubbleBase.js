@@ -9,6 +9,8 @@
 	$P.BubbleBase = $P.defineClass(
 		$P.Shape.Rectangle,
 		function BubbleBase(config) {
+			//if (!(this instanceof BubbleBase)) {return new BubbleBase(config);}
+
 			var group;
 			if (!config.strokeStyle) {
 				config.strokeStyle = $P.BubbleBase.getUnusedColor();}
@@ -20,16 +22,18 @@
 
 			this.links = [];
 			this.neighbors = {left: null, right: null};
+			var parent = config.parent;
+			config.parent = null;
 			$P.Shape.Rectangle.call(this, config);
 
 			this.minSize = config.minSize || {w: 100, h: 100};
 			if ('current' === this.minSize) {
 				this.minSize = {w: this.w, h: this.h};};
 
+			if (config.closeMenu) {this.add($P.ActionButton.create('close'));}
 			if (config.mainMenu || this.menu) {
 				this.menuButton = $P.ActionButton.create('menu');
 				this.add(this.menuButton);}
-			if (config.closeMenu) {this.add($P.ActionButton.create('close'));}
 			if (config.groupMenu) {
 				this.groupButton = $P.ActionButton.create('group');
 				this.add(this.groupButton);}
@@ -39,7 +43,9 @@
 
 			this.title = new $P.Title({parent: this, name: '', strokeStyle: this.strokeStyle});
 			this.name = config.name || '';
-			if (this.name instanceof Function) {this.name = this.name.call(this);}},
+			if (this.name instanceof Function) {this.name = this.name.call(this);}
+			if (parent) {parent.add(this);}
+			return this;},
 		{
 			get name() {return this._name;},
 			set name(value) {
@@ -59,7 +65,7 @@
 
 			onAdded: function(parent) {
 				if (!(parent instanceof $P.BubbleGroup)) {
-					this.parent.add(new $P.BubbleGroup(this));
+					this.parent.add(new $P.BubbleGroup({children: [this]}));
 					return true;}
 				return false;},
 
@@ -107,8 +113,7 @@
 
 				result = $P.Object2D.prototype.receiveEvent.call(this, event);
 				if (result) {return result;}
-				return this.mousemove(event) ||
-					this.mousedown(event);},
+				return this.mousemove(event) || this.mousedown(event);},
 
 			/**
 			 * Handle the mousemove event.
@@ -235,16 +240,6 @@
 					t: t * (1 - multH),
 					b: b * (1 - multH)};},
 
-			/**
-			 * Expand the given edge by the given amount of pixels.
-			 * @param {number} right - the amount to expand the right edge by
-			 * @param {number} top - the amount to expand the top edge by
-			 * @param {number} left - the amount to expand the left edge by
-			 * @param {number} bottom - the amount to expand the bottom edge by
-			 */
-			expandEdges: function(right, top, left, bottom) {
-				this.translate(-left, -top, left + right, top + bottom);},
-
 			onPositionChanged: function(dx, dy, dw, dh) {
 				$P.Shape.Rectangle.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
 				this.repositionMenus();
@@ -263,7 +258,29 @@
 				if (this.title) {
 					this.title.strokeStyle = style;
 					this.title.fillStyle = style;}
-				$P.state.markDirty();}
+				$P.state.markDirty();},
+
+			getPersistObject: function(info) {
+				info.bubbles[this.id] = this;
+				var config = $.extend({}, this.config);
+				delete config.parent;
+				delete config.children;
+				config.x = this.x;
+				config.y = this.y;
+				config.w = this.w;
+				config.h = this.h;
+				config.minSize = this.minSize;
+				var persist = {
+					__persist: true,
+					class: this.class,
+					config: config,
+					id: this.id,
+					children: []};
+				if (this.children) {
+					this.children.forEach(function(child) {
+						if (child.getPersistObject) {
+							persist.children.push(child.getPersistObject(info));}});}
+				return persist;}
 
 		});
 	$P.Bubble = $P.BubbleBase;

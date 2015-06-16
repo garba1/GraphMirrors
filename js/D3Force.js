@@ -37,7 +37,7 @@
 			initialize: function() {
 				var self = this;
 				this.size = Math.min(this.parent.w, this.parent.h);
-				this.scale = 0.65;
+				this.scale = 1;
 				this.colors = ['cyan', 'yellow', 'lime', 'orange', 'purple'];
 				this.entity_label_max_length = 10;
 				this.location_label_max_length = 100;
@@ -73,9 +73,13 @@
 				this.location_entity_link_width = 0.0005;
 				this.reaction_edge_count = 0;
 
-				this.svg.normal_layer = this.svg.append('g').attr('id', 'normal-layer');
-				this.svg.text_layer = this.svg.append('g').attr('id', 'text-layer');
-				this.svg.interact_layer = this.svg.append('g').attr('id', 'interact-layer');
+				this.svg.normal_layer = this.svg.append('g').attr('id', 'normal-layer').attr('pointer-events', 'all');
+				this.svg.text_layer = this.svg.append('g').attr('id', 'text-layer').attr('pointer-events', 'none');
+				this.svg.interact_layer = this.svg.append('g').attr('id', 'interact-layer').attr('pointer-events', 'all');
+				this.svg.normal_layer.call(d3.behavior.zoom().on('zoom', function() {
+					this.svg.attr('transform', 'translate('+d3.event.translate+')scale('+d3.event.scale+')');
+				}.bind(this)));
+
 
 				this.force = d3.layout.force().size([this.size, this.size])
 					.gravity(0.03)
@@ -140,7 +144,13 @@
 					});}.bind(this));
 
 				this.drag = this.force.drag()
-					.on('dragstart', function(d) {d3.select(this).classed('fixed', d.fixed = true);})
+					.on('dragstart', function(d) {
+						$P.state.scene.record({
+							type: 'soup-drag',
+							name: d.name,
+							bubble: this
+						});
+						d3.select(this).classed('fixed', d.fixed = true);})
 					.on('drag.force', function(d) {
 						d.px = d3.event.x, d.py = d3.event.y;
 						// Run a single, low-movement tick.
@@ -171,7 +181,8 @@
 				var bubble = this.parent,
 						names;
 				expressions = expressions || {};
-				$.getJSON('php/expandEntity.php?symbols=' + symbols.join(','), null, function(data) {
+				var callback = function(data) {
+					console.log('DATA', data);
 					var x = this.size/2,
 							y = this.size/2,
 							pathwayId2;
@@ -312,7 +323,16 @@
 
 					this.update_svg();
 					this.force.start();
-				}.bind(this));},
+				}.bind(this);
+
+				console.log(pathwayId);
+				$P.getJSON(
+					'./php/get_entities.php',
+					callback,
+					{type: 'GET',
+					 data: {
+						 mode: 'reactome_pathway_id',
+						 id: pathwayId}});},
 			merge_reactions: function(reactions) {
 				var a, b, id_a, id_b, processed, merged;
 
@@ -532,8 +552,8 @@
 					.attr('stroke', this.entity_stroke)
 					.attr('stroke-width', this.size * this.scale * this.entity_width)
 					.attr('fill', function(n) {
-						if (n.expression == 'retinal') {return 'red';}
-						if (n.expression == 'pineal') {return 'green';}
+						if (n.expression == 'retinal') {return 'yellow';}
+						if (n.expression == 'pineal') {return 'blue';}
 						return 'white';})
 					.attr('fill-opacity', this.entity_opacity)
 					.attr('r', this.size * this.scale * this.entity_size)

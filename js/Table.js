@@ -11,6 +11,9 @@
 	$P.Table = $P.defineClass(
 		$P.BubbleBase,
 		function Table(config) {
+			if (!(this instanceof Table)) {return new Table(config);}
+			this.class = 'Table';
+
 			this.dbId = config.dbId;
 			this.dataName = config.name || null;
 			if (this.dataName) {this.name = this.dataName;}
@@ -24,11 +27,10 @@
 			this.keepQuery = config.keepQuery || null;
 			this.sourceRing = config.sourceRing || null;
 
-			console.log(this.data);
-
 			$.extend(config, {closeMenu: true, groupMenu: true});
 			$P.BubbleBase.call(this, config);
-		}, {
+			return this;},
+		{
 			onAdded: function(parent) {
 				var config;
 
@@ -45,6 +47,12 @@
 					this.svg = new $P.D3Table(config);
 					this.svg.init();}
 
-			}
+			},
+
+			getPersistObject: function(info) {
+				var persist = $P.BubbleBase.prototype.getPersistObject.call(this, info);
+				delete persist.config.sourceRing;
+				return persist;}
+
 		});
 })(PATHBUBBLES);

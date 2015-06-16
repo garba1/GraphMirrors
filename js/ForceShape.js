@@ -93,7 +93,7 @@
 			getLabelPosition: function(view, size) {
 				var self = this;
 				if (undefined === size) {size = 14;}
-				return {x: self.w * 0.5, y: self.h - size * 0.5};
+				return {x: self.w * 0.5, y: self.h - size * 0.5, length: self.w};
 			},
 			makeZoom: function(layout, view) {
 				var self = this,
@@ -140,7 +140,7 @@
 			getLabelPosition: function(view, size) {
 				var self = this;
 				if (undefined === size) {size = 14;}
-				return {x: self.w * (0.25 + 0.5 * view.index), y: self.h - size * 0.5};
+				return {x: self.w * (0.25 + 0.5 * view.index), y: self.h - size * 0.5, length: self.w * 0.5};
 			},
 			makeZoom: function(layout, view) {
 				var self = this,

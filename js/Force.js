@@ -15,7 +15,7 @@ $P.Force = $P.defineClass(
 		config.groupMenu = true;
 		$P.BubbleBase.call(this, config);
 
-		this.add($P.ActionButton.create('mirror'));
+		//this.add($P.ActionButton.create('mirror'));
 		this.repositionMenus();
 
 		this.pathways = {};},
@@ -60,9 +60,19 @@ $P.Force = $P.defineClass(
 				config = $.extend(config, this.getInteriorDimensions());
 				this.svg = new $P.D3Force(config);}},
 		receiveEvent: function(event) {
-			var result;
+			var result, self = this;
 
-			if ('reactionDrag' == event.name && this.contains(event.x, event.y)) {return this;}
+			if ('dragPathway' == event.name && this.contains(event.x, event.y)) {
+				$P.state.scene.record({
+					type: 'soup-add-pathway',
+					bubble: self.name,
+					bubbleId: self.id,
+					pathwayId: event.pathwayId,
+					pathwayName: event.pathwayName
+				});
+				this.addPathway(event.pathwayId, event.pathwayName, event.strokeStyle);
+				this.svg.addSymbols(event.pathwayId, event.expression, event.symbols);
+				return this;}
 
 			result = $P.BubbleBase.prototype.receiveEvent.call(this, event);
 			if (result) {return result;}

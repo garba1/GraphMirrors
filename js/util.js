@@ -298,4 +298,5 @@ $P.asyncOrdered = function(callbacks) {
 		//	console.log('FISHER:', inA, outA, inB, outB, Math.exp(result));}
 		return Math.exp(result);};
 
+
 })(PATHBUBBLES);
