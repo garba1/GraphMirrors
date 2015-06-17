@@ -10,7 +10,7 @@
 
 			$P.ForceView.call(self, config);
 
-			textTransform = self.shape.textTransform(self);
+			self.textTransform = self.shape.textTransform(self);
 
 			if (config.displayArgument) {
 				if ('pathway' === config.displayArgument.type) {
@@ -25,6 +25,7 @@
 					if (d.componentNodes && d.componentNodes.length) {
 						size = Math.pow(d.componentNodes.length, 0.4);}
 					return target * size;};}
+			self.nodeSize = nodeSize;
 
 			function nodeTitle(d) {
 				var title = d.name;
@@ -390,14 +391,7 @@
 						.attr('r', 100);}});
 			// Nodes in the pathway.
 			// An extra box indicating crosstalk.
-			self.entities.proteins.crosstalking
-				.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', 'gray')
-				.attr('transform', textTransform)
-				.attr('width', nodeSize(14)).attr('height', nodeSize(10))
-				.attr('x', nodeSize(-7)).attr('y', nodeSize(-5))
-				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3));
+			self.entityBackgrounds();
 			// The main circle.
 			self.entities.diminished
 				.append('rect')
@@ -599,6 +593,21 @@
 
 				return false;},
 
+			activePathways: function(node) {
+				var pathways = [];
+				if (!this.pathway && !this.pathways) {return pathways;}
+
+				if ('entity' === node.klass) {
+					if (!node.pathways) {return pathways;}
+					if (this.pathway && node.pathways[parseInt(this.pathway.id)]) {
+						pathways.push(this.pathway);}
+					if (this.pathways) {
+						this.pathways.forEach(function(pathway) {
+							if (node.pathways[parseInt(pathway.id)]) {
+								pathways.push(pathway);}});}}
+
+				return pathways;},
+
 			getExpression: function(node) {
 				if (this.pathway) {
 					return this.pathway.expression[node.name];}
@@ -631,6 +640,17 @@
 			delete: function() {
 				$P.ForceView.prototype.delete.call(this);
 				this.label.remove();
-			}
+			},
+
+			entityBackgrounds: function() {
+				this.entities.proteins.crosstalking
+					.append('rect')
+					.attr('stroke', 'black')
+					.attr('fill', 'gray')
+					.attr('transform', this.textTransform)
+					.attr('width', this.nodeSize(14)).attr('height', this.nodeSize(10))
+					.attr('x', this.nodeSize(-7)).attr('y', this.nodeSize(-5))
+					.attr('rx', this.nodeSize(3)).attr('ry', this.nodeSize(3));}
+
 		});
 })(PATHBUBBLES);
