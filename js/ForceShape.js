@@ -28,7 +28,7 @@
 					$P.Vector2D(-this.w, -this.h).angle() + Math.PI * 2,
 					$P.Vector2D(this.w, -this.h).angle() + Math.PI * 2];},
 
-			makeZoom: function(layout, view) {
+			makeZoom: function(layout, view, baseline) {
 				var self = this, zoom, base;
 				base = d3.behavior.zoom()
 					.scaleExtent([0.1, 10])
@@ -40,10 +40,20 @@
 							zoom.translate(self.translate);
 							zoom.scale(self.scale);
 							zoom.view.onZoom();});});
+				if (baseline) {
+					console.log('BASELINE', baseline);
+					base.translate(baseline.translate());
+					base.scale(baseline.scale());}
 				zoom = d3.rebind(
 					function(g) {
 						base(g);
-						g.on('dblclick.zoom', null);},
+						g.on('dblclick.zoom', function() {
+							var force = view.layout.force;
+							if (0 !== force.alpha()) {
+								force.stop();}
+							else {
+								force.resume();}
+						});},
 					base,
 					'translate', 'scale', 'size', 'center');
 				zoom.view = view;
@@ -59,6 +69,7 @@
 				zoom.getScale = function(base) {return base;};
 				zoom.setTranslate = function(base) {return base;};
 				zoom.setScale = function(base) {return base;};
+				zoom.base = base;
 				this.zooms.push(zoom);
 				return zoom;},
 
@@ -95,9 +106,9 @@
 				if (undefined === size) {size = 14;}
 				return {x: self.w * 0.5, y: self.h - size * 0.5, length: self.w};
 			},
-			makeZoom: function(layout, view) {
+			makeZoom: function(layout, view, baseline) {
 				var self = this,
-						zoom = $P.ForceShape.prototype.makeZoom.call(this, layout, view);
+						zoom = $P.ForceShape.prototype.makeZoom.call(this, layout, view, baseline);
 				return zoom;},
 			getZoomCenter: function(viewIndex, mousePosition) {
 				return [mousePosition[0] - this.cx, mousePosition[1] - this.cy];}});
@@ -142,10 +153,10 @@
 				if (undefined === size) {size = 14;}
 				return {x: self.w * (0.25 + 0.5 * view.index), y: self.h - size * 0.5, length: self.w * 0.5};
 			},
-			makeZoom: function(layout, view) {
+			makeZoom: function(layout, view, baseline) {
 				var self = this,
 						flipX = self.flipX(view.index),
-						zoom = $P.ForceShape.prototype.makeZoom.call(this, layout, view);
+						zoom = $P.ForceShape.prototype.makeZoom.call(this, layout, view, baseline);
 				zoom.getTranslate = function(base) {
 					if (flipX) {base[0] *= -1;}
 					return base;};
@@ -218,9 +229,9 @@
 						y2: this.cy + radius * Math.sin(angle)});
 					angle += this.angle;}
 				return dividers;},
-			makeZoom: function(layout, view) {
+			makeZoom: function(layout, view, baseline) {
 				var self = this,
-						zoom = $P.ForceShape.prototype.makeZoom.call(self, layout, view);
+						zoom = $P.ForceShape.prototype.makeZoom.call(self, layout, view, baseline);
 				zoom.getTranslate = function(base) {
 					return new $P.Vector2D(base[0], base[1]).rotate(-self.angle * view.index).array();};
 				zoom.setTranslate = function(base) {

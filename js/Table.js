@@ -14,22 +14,31 @@
 			if (!(this instanceof Table)) {return new Table(config);}
 			this.class = 'Table';
 
-			this.dbId = config.dbId;
-			this.dataName = config.name || null;
-			if (this.dataName) {this.name = this.dataName;}
-			else {this.name = 'Table';}
-			this.selectedFile = null;
-			this.data = config.data || null;
-			this.queryObject = config.queryObject || null;
-			this.crosstalking = config.crosstalking || null;
-			this.experimentType = config.experimentType || 'Ortholog';
-			this.preHierarchical = config.preHierarchical || '';
-			this.keepQuery = config.keepQuery || null;
-			this.sourceRing = config.sourceRing || null;
+			var self = this;
+
+			self.dbId = config.dbId;
+			self.dataName = config.name || null;
+			if (self.dataName) {self.name = self.dataName;}
+			else {self.name = 'Table';}
+			self.selectedFile = null;
+			self.data = config.data || null;
+			self.queryObject = config.queryObject || null;
+			self.crosstalking = config.crosstalking || null;
+			self.experimentType = config.experimentType || 'Ortholog';
+			self.preHierarchical = config.preHierarchical || '';
+			self.keepQuery = config.keepQuery || null;
+			self.sourceRing = config.sourceRing || null;
 
 			$.extend(config, {closeMenu: true, groupMenu: true});
-			$P.BubbleBase.call(this, config);
-			return this;},
+			$P.BubbleBase.call(self, config);
+
+			self.add($P.ActionButton.create({
+				name: 'export',
+				text: 'E',
+				action: self.exportData.bind(self)}));
+			self.repositionMenus();
+
+			return self;},
 		{
 			onAdded: function(parent) {
 				var config;
@@ -45,14 +54,26 @@
 					else {
 						config.dbId = this.dbId;}
 					this.svg = new $P.D3Table(config);
-					this.svg.init();}
+					if (!config.data) {this.svg.init();}}
 
 			},
 
 			getPersistObject: function(info) {
 				var persist = $P.BubbleBase.prototype.getPersistObject.call(this, info);
 				delete persist.config.sourceRing;
-				return persist;}
+				return persist;},
 
+			exportData: function() {
+				if (!this.svg) {return false;}
+				var data = this.svg.exportData();
+				var a = document.createElement('a');
+				var text = data.map(function(row) {return row.join(',');}).join('\n');
+				a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+				a.setAttribute('download', this.name + '.csv');
+				a.style.display = 'none';
+				document.body.appendChild(a);
+				a.click();
+				document.body.removeChild(a);
+				return true;}
 		});
 })(PATHBUBBLES);

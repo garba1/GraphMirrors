@@ -34,6 +34,10 @@
 			this.w = config.w || this.svg.attr('width');
 			this.h = config.h || this.svg.attr('height');
 
+			this.zoomBase = config.zoomBase;
+			if (this.zoomBase) {
+				console.log(this.zoomBase, this.zoomBase.translate(), this.zoomBase.scale());}
+
 			this.views = [];
 			for (i = 0; i < this.viewCount; ++i) {
 				view = new this.viewConstructor({
@@ -44,6 +48,7 @@
 					shape: this.shape,
 					displayArgument: config.viewArgs[i],
 					viewCount: this.viewCount,
+					zoomBase: this.zoomBase,
 					index: i});
 				this.views.push(view);}
 

@@ -29,7 +29,37 @@
 										.endAngle(d.angle * (i + 1)))();})
 					.attr('stroke', 'black')
 					.attr('stroke-width', self.nodeSize(0.5))
-					.attr('fill', function(d, i) {return d.color;});}
+					.attr('fill', function(d, i) {return d.color;});},
+
+			linkBackgrounds: function() {
+				var self = this;
+
+
+				/*
+				self.reactionLinks.pathways = self.reactionLinks.append('g').attr('class', 'pathway-edge');
+				self.reactionLinks.pathways.selectAll('.pathway-section')
+					.data(function(d, i) {
+						var pathways = self.activePathways(d);
+						return pathways;})
+					.enter().append('line').attr('class', 'pathway-section')
+
+
+				if (this.svg.pathway_edges) {this.svg.pathway_edges.remove();}
+				this.svg.pathway_edges = this.svg.normal_layer.selectAll('.pathway-edge')
+					.data(this.edges.reactions.filter($P.getter('activePathways')), $P.getter('id')).enter()
+					.append('g')
+					.attr('class', 'pathway-edge');
+				this.svg.pathway_edges.each(function(edge) {
+					d3.select(this).selectAll('.pathway-edge-part').data(edge.activePathways).enter()
+						.append('line')
+						.attr('class', 'pathway-edge-part')
+						.attr('stroke', function(pathwayId) {return bubble.pathways[pathwayId].color;})
+						.attr('stroke-width', self.size * self.scale * self.pathway_link_width)
+						.attr('stroke-opacity', self.pathway_link_opacity)
+						.attr('fill', 'none');});
+				 */
+
+			}
 
 		});
 

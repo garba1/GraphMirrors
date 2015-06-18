@@ -42,8 +42,14 @@ $P.MainCanvas = $P.defineClass(
 			this.renderer.valid = false;
 			 */
 		}
+
 	},
 	{
+		onResize: function() {
+			$P.Canvas.prototype.onResize.call(this);
+			this.html.width = window.innerWidth;
+			this.html.height = window.innerHeight;},
+
 		mousedown: function(event, x, y) {this.mode.mousedown(event, x + $P.state.scrollX, y);},
 		mousemove: function(event, x, y) {this.mode.mousemove(event, x + $P.state.scrollX, y);},
 		mouseup: function(event, x, y) {this.mode.mouseup(event, x, y);},

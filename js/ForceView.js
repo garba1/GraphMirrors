@@ -32,7 +32,7 @@
 			if (!defs) {defs = self.svg.append('defs');}
 			self.clip = defs.append('svg:clipPath').attr('id', clipId);
 
-			self.zoom = self.shape.makeZoom(self.layout, self);
+			self.zoom = self.shape.makeZoom(self.layout, self, config.zoomBase);
 			self.root = self.parent.append('g')
 				.attr('class', 'view')
 				.attr('clip-path', 'url(#' + clipId + ')');

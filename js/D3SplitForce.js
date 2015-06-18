@@ -23,6 +23,7 @@
 			this.legendWidth = config.legendWidth || 120;
 
 			this.updateSvgPosition();
+
 		},
 		{
 			getExpressionColor: function(pathwayIndex, symbol) {
@@ -30,8 +31,20 @@
 				if ('down' === this.expression[symbol]) {return 'cyan';}
 				return 'white';},
 
-			addPathway: function(pathway) {
+			addPathway: function(pathway, mode) {
 				var self = this;
+
+				if (undefined === pathway.color) {
+					var colors = $P.BubbleBase.colors.slice(0), color, p;
+					for (p in self.pathways) {
+						$P.removeFromList(colors, self.pathways[p].color);}
+					if (0 === colors.length) {
+						pathway.color = '#666';}
+					else if (-1 !== colors.indexOf(pathway.strokeStyle)) {
+						pathway.color = pathway.strokeStyle;}
+					else {
+						pathway.color = colors[0];}}
+
 				function onFinish() {
 					$P.state.scene.record({
 						type: 'pathway-added',
@@ -44,17 +57,6 @@
 					pathway = $.extend({}, pathway, {type: 'pathway'});
 					self.pathways.push(pathway);
 
-					if (undefined === pathway.color) {
-						var colors = $P.BubbleBase.colors.slice(0), color, p;
-						for (p in self.pathways) {
-							$P.removeFromList(colors, self.pathways[p].color);}
-						if (0 === colors.length) {
-							pathway.color = '#666';}
-						else if (-1 !== colors.indexOf(pathway.strokeStyle)) {
-							pathway.color = pathway.strokeStyle;}
-						else {
-							pathway.color = colors[0];}}
-
 					if (self.svg) {self.svg.remove();}
 					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 					self.svg.main = self.svg.append('g').attr('id', 'main');
@@ -64,10 +66,11 @@
 					self.createLegend();
 
 					self.layout.setPathways(self.pathways);
-					self.layoutSplit();
+					self.layout.force.start();
+					if ('split' === mode) {self.layoutSplit();}
+					else if ('soup' === mode) {self.layoutSoup();}
 					self.updateSvgPosition();
 					console.log(self.layout.force);
-					self.layout.force.start();
 					//self.layout.doTicks(10, {no_display: true});
 					// TODO: Auto zoom out?
 					//self.layout.getBoundingBox();
@@ -90,11 +93,28 @@
 						mode: 'reactome_pathway_id',
 						id: pathway.pathwayId}});},
 
-			layoutSplit: function() {
+			getPathwayColor: function(pathway) {
+				var i;
+				for (i = 0; i < this.pathways.length; ++i) {
+					if (pathway.id === this.pathways[i].id) {
+						return this.pathways[i].color;}}
+				return pathway.color || pathway.strokeStyle || null;},
+
+			layoutPrep: function() {
 				if (this.display) {this.display.delete();}
+				if (this.display && this.display.viewCount > 0) {
+					this.zoomBase = this.display.views[0].zoom.base;}},
+
+			layoutFinish: function() {
+				if (!this.display || !this.display.layout || !this.display.layout.force) {return;}
+				this.onTick(null, {origin: 'layoutUpdate'});},
+
+			layoutSplit: function() {
+				this.layoutPrep();
 				if (1 === this.pathways.length) {this.layoutSingle();}
 				if (2 === this.pathways.length) {this.layoutMirror();}
-				if (2 < this.pathways.length) {this.layoutRadial();}},
+				if (2 < this.pathways.length) {this.layoutRadial();}
+				this.layoutFinish();},
 
 			layoutSingle: function() {
 				this.display = new $P.ForceDisplay({
@@ -103,6 +123,7 @@
 					parentBubble: this.parent,
 					layout: this.layout,
 					shape: new $P.ForceShape.Centered({w: this.w, h: this.h, count: 1}),
+					zoomBase: this.zoomBase,
 					viewArgs: this.pathways,
 					viewConstructor: $P.PathwayForceView});},
 
@@ -113,6 +134,7 @@
 					parentBubble: this.parent,
 					layout: this.layout,
 					shape: new $P.ForceShape.Mirror({w: this.w * 0.5, h: this.h, count: 2}),
+					zoomBase: this.zoomBase,
 					viewArgs: this.pathways,
 					viewConstructor: $P.PathwayForceView});},
 
@@ -125,19 +147,22 @@
 					shape: new $P.ForceShape.Radial({
 						count: this.pathways.length,
 						radius: Math.max(this.w, this.h)}),
+					zoomBase: this.zoomBase,
 					viewArgs: this.pathways,
 					viewConstructor: $P.PathwayForceView});},
 
 			layoutSoup: function() {
-				if (this.display) {this.display.delete();}
+				this.layoutPrep();
 				this.display = new $P.ForceDisplay({
 					svg: this.svg,
 					parent: this.svg.main,
 					parentBubble: this.parent,
 					layout: this.layout,
 					shape: new $P.ForceShape.Centered({w: this.w, h: this.h, count: 1}),
+					zoomBase: this.zoomBase,
 					viewArgs: [{type: 'pathways', list: this.pathways}],
-					viewConstructor: $P.SoupForceView});},
+					viewConstructor: $P.SoupForceView});
+				this.layoutFinish();},
 
 			onPositionChanged: function(dx, dy, dw, dh) {
 				$P.HtmlObject.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
@@ -302,7 +327,7 @@
 			drawSelf: function(context, scale, args) {
 				$P.HtmlObject.prototype.drawSelf.call(this, context, scale, args);},
 
-			onTick: function(layout, args) {
+			onTick: function(_, args) {
 				var self = this;
 				args = args || {};
 				if (args.no_display) {return;}
@@ -317,6 +342,13 @@
 
 				// Undirected Links.
 				this.svg.selectAll('.link line')
+					.attr('x1', function(link) {return link.source.x;})
+					.attr('y1', function(link) {return link.source.y;})
+					.attr('x2', function(link) {return link.target.x;})
+					.attr('y2', function(link) {return link.target.y;});
+
+				// Pathway edge links
+				this.svg.selectAll('.link .pathway-edge')
 					.attr('x1', function(link) {return link.source.x;})
 					.attr('y1', function(link) {return link.source.y;})
 					.attr('x2', function(link) {return link.target.x;})

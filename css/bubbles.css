@@ -26,3 +26,12 @@
 		position: absolute;
 		z-index: 100000;
 }
+
+
+/* Tables */
+.meter {
+		display: inline-block;
+		float: left;
+		background-color: #00F;
+		vertical-align: middle;
+}

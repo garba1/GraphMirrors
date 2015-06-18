@@ -12,10 +12,12 @@ $P.NavCanvas = $P.defineClass(
 		$P.Canvas.call(this, config);
 		this.state = 'default';
 		this.viewbox = new $P.NavViewBox($P.state.mainCanvas, this);
-		this.onResize();
+		var self = this;
+		$(function() {self.onResize();});
 	}, {
 		onResize: function() {
 			$P.Canvas.prototype.onResize.call(this);
+			this.html.width = window.innerWidth;
 			this.scale = this.getHeight() / $P.state.mainCanvas.getHeight();
 			this.viewbox.updatePosition();},
 		mousedown: function(event, x, y) {

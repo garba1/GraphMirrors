@@ -136,6 +136,7 @@
 				.text($P.getter('name'));
 			self.reactionLinks = self.links.filter(
 				function(d, i) {return 'reaction:entity' === d.klass;});
+			self.linkBackgrounds();
 			// For some weird reason the stroke is being displayed as
 			// white-ish, even though it's set to these values at the time
 			// of display. As a temporary fix make opacity and width 0.
@@ -593,17 +594,20 @@
 
 				return false;},
 
-			activePathways: function(node) {
+			activePathways: function(component) {
 				var pathways = [];
 				if (!this.pathway && !this.pathways) {return pathways;}
 
-				if ('entity' === node.klass) {
-					if (!node.pathways) {return pathways;}
-					if (this.pathway && node.pathways[parseInt(this.pathway.id)]) {
+				if ('reaction:entity' === component.klass) {
+					return this.activePathways(component.entity);}
+
+				if ('entity' === component.klass) {
+					if (!component.pathways) {return pathways;}
+					if (this.pathway && component.pathways[parseInt(this.pathway.id)]) {
 						pathways.push(this.pathway);}
 					if (this.pathways) {
 						this.pathways.forEach(function(pathway) {
-							if (node.pathways[parseInt(pathway.id)]) {
+							if (component.pathways[parseInt(pathway.id)]) {
 								pathways.push(pathway);}});}}
 
 				return pathways;},
@@ -641,6 +645,8 @@
 				$P.ForceView.prototype.delete.call(this);
 				this.label.remove();
 			},
+
+			linkBackgrounds: function() {},
 
 			entityBackgrounds: function() {
 				this.entities.proteins.crosstalking

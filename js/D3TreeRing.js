@@ -71,14 +71,92 @@
 				'#fd8d3c',
 				'#e6550d',
 				'#a63603'];
-			/*
-			 this.expressionColors = [
-			 '#ffa', '#ff6', '#ffb', '#ff9', '#ff7',
-			 '#ff5', '#ff3', '#ff1', '#0c0', '#0a0'
-			 ];
-			 */
-		},
+
+			$(this.element).contextMenu({
+				selector: '.pathway-arc',
+				items: {
+					proteins: {
+						name: 'Open Pathway Contents',
+						callback: this.openPathwayContents.bind(this)},
+					pathways: {
+						name: 'Open Child Pathways',
+						callback: this.openChildPathways.bind(this)}}
+			});
+
+			return this;},
 		{
+			openChildPathways: function(key, options) {
+				var self = this, bubble = this.parent;
+				var parent, children, table, data;
+
+				parent = options.$trigger[0].__data__;
+				children = parent.children;
+
+				console.log(children);
+				data = [];
+				children.forEach(function(child) {
+					var entry = {};
+					data.push(entry);
+					entry.pathway = child.name;
+					entry.id = child.dbId;
+
+					var expr = self.customExpressionProcessed && self.customExpressionProcessed[child.dbId];
+					if (expr) {
+						entry.total = expr.ups.length + expr.downs.length + expr.unchanges.length;
+						entry.up = expr.ups.length;
+						entry.down = expr.downs.length;
+						entry.unchanged = expr.unchanges.length;
+						entry.fisher = {
+							value: child.expressionFisher,
+							color: self.getFisherColor(child.expressionFisher)};}});
+
+				table = new $P.Table({
+					name: parent.name,
+					sourceRing: bubble,
+					w: 700, h: 400,
+					data: data});
+				bubble.parent.add(table);
+
+				$P.state.scene.addLink(
+					new $P.BubbleLink({
+						source: new $P.D3TreeRing.BubbleLinkEnd({
+							ring: bubble,
+							datum: parent}),
+						target: new $P.BubbleLink.End({object: table})}));
+
+				//d3.event.preventDefault();
+				return true;},
+
+			openPathwayContents: function(key, options) {
+				var self = this, bubble = this.parent;
+				var datum, table;
+				//if (d3.event.defaultPrevented) {return;}
+
+				datum = options.$trigger[0].__data__;
+				table = new $P.Table({
+					dbId: datum.dbId,
+					name: datum.name,
+					experimentType: self.parent.experimentType,
+					sourceRing: self.parent,
+					w: 650, h: 400});
+				bubble.parent.add(table);
+				$P.state.scene.record({
+					type: 'tree-ring-right-click',
+					dbId: datum.dbId,
+					name: datum.name,
+					sourceRing: self.parent.name});
+
+				$P.state.scene.addLink(
+					new $P.BubbleLink({
+						source: new $P.D3TreeRing.BubbleLinkEnd({
+							ring: self.parent,
+							datum: datum}),
+						target: new $P.BubbleLink.End({object: table})
+					}));
+
+				//d3.event.preventDefault();
+				return true;},
+
 			onPositionChanged: function(dx, dy, dw, dh) {
 				$P.HtmlObject.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
 				if (this.svg) {
@@ -376,7 +454,17 @@
 							if (!result) {
 								force = new $P.SplitForce({x: x, y: y, w: 750, h: 600});
 								$P.state.scene.add(force);
-								force.receiveEvent(event);}
+								result = force.receiveEvent(event);}
+
+							console.log('result', result);
+							if (result && result.addLink) {
+								$P.state.scene.addLink(new $P.BubbleLink({
+									strokeStyle: 'black',
+									fillStyle: result.addLink.color,
+									source: new $P.D3TreeRing.BubbleLinkEnd({
+										ring: self.parent,
+										datum: d3.select(this).datum()}),
+									target: new $P.BubbleLink.End({object: result.target})}));}
 
 							d3.select(this).attr('transform', null);
 							_this.dragging = null;
@@ -511,7 +599,7 @@
 									nodeData.forEach(function(d) {
 										var exprCount;
 										if (!d.gallusOrth || !d.gallusOrth.sharedSymbols) {return;}
-										d.expression = self.customExpressionProcessed[d.name];
+										d.expression = self.customExpressionProcessed[d.dbId];
 										exprCount = d.expression.ups.length + d.expression.downs.length;
 										d.expressionFisherA = exprCount - 1;
 										d.expressionFisherB = self.customExpressionProcessed.__expressedSet.asList().length - exprCount;
@@ -550,7 +638,7 @@
 									minRatio = self.parent.minRatio;
 									maxRatio = self.parent.maxRatio;
 									exprs = {ups: [], downs: [], unchanges: []};
-									self.customExpressionProcessed[d.name] = exprs;
+									self.customExpressionProcessed[d.dbId] = exprs;
 									expressions = self.customExpressionProcessed.__expressions;
 									usedSymbols = {};
 									d.gallusOrth.sharedSymbols.forEach(function(symbol) {
@@ -655,20 +743,6 @@
 										ratio = Math.max(ratio, 0);
 										return self.expressionColors[Math.floor(9 * ratio / max)];}
 
-									function getFisherColor(ratio) {
-										ratio = Math.min(ratio, 1 - 0.000000001);
-										ratio = Math.max(ratio, 0);
-										if (ratio >= 0.5) {return self.fisherColors[0];}
-										if (ratio >= 0.25) {return self.fisherColors[1];}
-										if (ratio >= 0.1) {return self.fisherColors[2];}
-										if (ratio >= 0.05) {return self.fisherColors[3];}
-										if (ratio >= 0.025) {return self.fisherColors[4];}
-										if (ratio >= 0.01) {return self.fisherColors[5];}
-										if (ratio >= 0.005) {return self.fisherColors[6];}
-										if (ratio >= 0.0025) {return self.fisherColors[7];}
-										if (ratio >= 0.001) {return self.fisherColors[8];}
-										return self.fisherColors[9];};
-
 									if (self.customExpression && self.localExpressionPercent) {
 										self.maxExpressionPercent =
 											d3.max(nodeData, function(d) {
@@ -677,10 +751,10 @@
 
 									pathG = pathG.data(nodeData)
 										.enter().append('path')
-										.attr('id', function (d, i) {
-											return 'group' + i;
-										})
+										.attr('id', function (d, i) {return 'group' + i;})
+										.attr('class', 'pathway-arc')
 										.attr('d', arc)
+										.each(function(d) {this.__data__ = d;})
 										.style('fill', function (d, i) {
 											if (i == 0)
 												return '#fff';
@@ -709,8 +783,8 @@
 												if (d.name == 'homo sapiens' || d.expression == undefined || d.gallusOrth == undefined) {
 													return '#fff';}
 												else if (d.unique.sharedSymbols.length == 0) {
-													return getFisherColor(0);}
-												return getFisherColor(d.expressionFisher);
+													return self.getFisherColor(0);}
+												return self.getFisherColor(d.expressionFisher);
 											}
 											else if (_this.customExpression) {
 												if (d.name == 'homo sapiens' || d.expression == undefined || d.gallusOrth == undefined)
@@ -726,7 +800,7 @@
 											}
 											return null;})
 										.style('cursor', 'pointer')
-										.on('contextmenu', rightClick)
+										//.on('contextmenu', rightClick)
 										.on('click', click)
 										.on('mousedown', function() {d3.event.stopPropagation();})
 										.call($P.tooltip.add(function(d, i) {
@@ -1059,7 +1133,7 @@
 											crosstalking: self.crosstalkSymbols,
 											keepQuery: true,
 											sourceRing: self.parent,
-											w: 560, h: 400});
+											w: 500, h: 400});
 										bubble.parent.add(table);
 
 										$P.state.scene.record({
@@ -1319,35 +1393,6 @@
 										node
 											.classed('node--target', false)
 											.classed('node--source', false);}
-
-									function rightClick(d, i) {
-										var selection, datum, table;
-										if (d3.event.defaultPrevented) {return;}
-
-										selection = d3.select(this);
-										datum = selection.datum();
-										table = new $P.Table({
-											dbId: datum.dbId,
-											name: datum.name,
-											experimentType: self.parent.experimentType,
-											sourceRing: self.parent,
-											w: 650, h: 400});
-										bubble.parent.add(table);
-										$P.state.scene.record({
-											type: 'tree-ring-right-click',
-											dbId: datum.dbId,
-											name: datum.name,
-											sourceRing: self.parent.name});
-
-										$P.state.scene.addLink(
-											new $P.BubbleLink({
-												source: new $P.D3TreeRing.BubbleLinkEnd({
-													ring: self.parent,
-													datum: d3.select(this).datum()}),
-												target: new $P.BubbleLink.End({object: table})
-											}));
-
-										d3.event.preventDefault();}
 
 									function click(d, i) {
 										var ringBubble;
@@ -1624,11 +1669,25 @@
 					orthologFile: this.orthologFile,
 					expressionFile: this.expressionFile,
 					fisher: this.fisher,
-					nodeTextSize: this.nodeTextSize
-				};
+					nodeTextSize: this.nodeTextSize};
 				if (persist.selectedData) {
 					delete persist.selectedData.parent;}
-				return persist;}
+				return persist;},
+
+			getFisherColor: function(ratio) {
+				ratio = Math.min(ratio, 1 - 0.000000001);
+				ratio = Math.max(ratio, 0);
+				if (ratio >= 0.5) {return this.fisherColors[0];}
+				if (ratio >= 0.25) {return this.fisherColors[1];}
+				if (ratio >= 0.1) {return this.fisherColors[2];}
+				if (ratio >= 0.05) {return this.fisherColors[3];}
+				if (ratio >= 0.025) {return this.fisherColors[4];}
+				if (ratio >= 0.01) {return this.fisherColors[5];}
+				if (ratio >= 0.005) {return this.fisherColors[6];}
+					if (ratio >= 0.0025) {return this.fisherColors[7];}
+				if (ratio >= 0.001) {return this.fisherColors[8];}
+				return this.fisherColors[9];}
+
 		});
 
 	$P.D3TreeRing.BubbleLinkEnd = $P.defineClass(

@@ -35,7 +35,10 @@
 			/**
 			 * @member {boolean} needsRedraw - if this canvas needs to be redrawn
 			 */
-			this.needsRedraw = true;},
+			this.needsRedraw = true;
+
+			$(window).resize(this.onResize.bind(this));
+		},
 		{
 			/**
 			 * Sets the cursor style.
@@ -86,7 +89,7 @@
 			 * @abstract
 			 */
 			onResize: function() {
-				this.needsRedraw = true;},
+				$P.state.markDirty();},
 			/**
 			 * Draws to the canvas.
 			 */

@@ -34,16 +34,6 @@
 		$P.state.scene = new $P.Scene();
 		$P.state.scrollX = 0;
 
-		// Resize events.
-		$P.state.needsResize = true;
-		window.addEventListener('resize', function() {
-			if (!$P.state.needsResize) {
-				$P.state.needsResize = true;
-				$P.requestAnimationFrame(function() {
-					$P.state.mainCanvas.onResize();
-					$P.state.overlayCanvas.onResize();
-					$P.state.navCanvas.onResize();});}});
-
 		$P.state.mainCanvas = new $P.MainCanvas({element: canvas, scene: $P.state.scene});
 		$P.state.overlayCanvas = new $P.OverlayCanvas({element: overlayCanvas, scene: $P.state.scene});
 		$P.state.navCanvas = new $P.NavCanvas({element: navCanvas, scene: $P.state.scene});

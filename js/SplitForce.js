@@ -17,10 +17,10 @@
 				text: 'S',
 				action: function(canvas, x, y) {
 					self.mode = 'split' === self.mode ? 'soup' : 'split';
+					console.log('display', self.svg.display);
 					if ('split' === self.mode) {self.svg.layoutSplit();}
 					if ('soup' === self.mode) {self.svg.layoutSoup();}
-					self.svg.updateSvgPosition();}
-			}));
+					self.svg.updateSvgPosition();}}));
 			this.repositionMenus();},
 		{
 			onAdded: function(parent) {
@@ -49,8 +49,9 @@
 					event.name = event.pathwayName;
 					event.id = event.pathwayId;
 					this.pathways.push(event);
-					this.svg.addPathway(event);
-					return {target: this, name: 'addedPathway', pathwayId: event.pathwayId};}
+					this.svg.addPathway(event, this.mode);
+					return {target: this, addLink: {color: this.svg.getPathwayColor(event)},
+									name: 'addedPathway', pathwayId: event.pathwayId};}
 
 				result = $P.BubbleBase.prototype.receiveEvent.call(this, event);
 				if (result) {return result;}

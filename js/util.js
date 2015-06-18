@@ -279,7 +279,7 @@ $P.asyncOrdered = function(callbacks) {
 				list.push(object[key]);}}
 		return list;};
 
-	$P.log10 = Math.log(10);
+	$P.ln10 = Math.log(10);
 
 	$P.fisher = function(inA, outA, inB, outB) {
 		var result;
