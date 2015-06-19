@@ -137,7 +137,7 @@ $P.listIntersection = function(listA, listB, compare) {
  * Get a json file.
  */
 $P.getJSON = function(url, callback, params) {
-	var call, config;
+	var call, config, count = 0;
 	config = {
 		dataType: 'json',
 		url: url,
@@ -147,10 +147,13 @@ $P.getJSON = function(url, callback, params) {
 			else {
 				console.error(errorThrown);
 				console.error(textStatus);}},
-		timeout: 5000,
+		timeout: 120000,
 		success: callback};
 	if (params) {config = $.extend(config, params);}
-	call = function call() {$.ajax(config);};
+	call = function call() {
+		++count;
+		if (count < 5) {
+			$.ajax(config);}};
 	call();};
 
 $P.nullf = function() {};
