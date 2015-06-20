@@ -97,7 +97,8 @@ $P.ActionButton.defineBase({
 	name: 'close',
 	text: 'X',
 	action: function() {
-		this.parent.delete();
+		if (window.confirm('Delete bubble?')) {
+			this.parent.delete();}
 		return true;}
 });
 

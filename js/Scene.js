@@ -120,7 +120,9 @@ $P.Scene = $P.defineClass(
 		 */
 		sendEvent: function(event) {
 			this.recordEvent(event);
-			return $P.or(this.children, $P.method('receiveEvent', event));},
+			var result = $P.or(this.children, $P.method('receiveEvent', event));
+			if (!result && 'mousemove' === event.name) {$P.tooltip.hide();} // TODO figure out a better place for this.
+			return result;},
 
 		recordEvent: function(event) {
 			if (!this.recording) {return;}

@@ -1,6 +1,3 @@
 (function($P) {
-	'use strict';
-
-	$P.D3 = {};
-
+	$P.Svg = {};
 })(PATHBUBBLES);

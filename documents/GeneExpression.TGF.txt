@@ -1,3 +1,7 @@
+up_name	Upness
+down_name	Downness
+up_cutoff_log2	2
+down_cutoff_log2	-2
 gene_id	symbol	ratio
 374096	SMAD6	0.6892992938620315
 395132	SMAD3	7.128911138923654

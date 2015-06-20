@@ -40,10 +40,6 @@
 							zoom.translate(self.translate);
 							zoom.scale(self.scale);
 							zoom.view.onZoom();});});
-				if (baseline) {
-					console.log('BASELINE', baseline);
-					base.translate(baseline.translate());
-					base.scale(baseline.scale());}
 				zoom = d3.rebind(
 					function(g) {
 						base(g);
@@ -109,6 +105,9 @@
 			makeZoom: function(layout, view, baseline) {
 				var self = this,
 						zoom = $P.ForceShape.prototype.makeZoom.call(this, layout, view, baseline);
+				if (baseline) {
+					zoom.translate(baseline.translate());
+					zoom.scale(baseline.scale());}
 				return zoom;},
 			getZoomCenter: function(viewIndex, mousePosition) {
 				return [mousePosition[0] - this.cx, mousePosition[1] - this.cy];}});
@@ -161,6 +160,9 @@
 					if (flipX) {base[0] *= -1;}
 					return base;};
 				zoom.setTranslate = zoom.getTranslate;
+				if (baseline) {
+					zoom.translate(baseline.translate());
+					zoom.scale(baseline.scale());}
 				return zoom;},
 			getZoomCenter: function(viewIndex, mousePosition) {
 				var x = mousePosition[0],
@@ -236,6 +238,9 @@
 					return new $P.Vector2D(base[0], base[1]).rotate(-self.angle * view.index).array();};
 				zoom.setTranslate = function(base) {
 					return new $P.Vector2D(base[0], base[1]).rotate(self.angle * view.index).array();};
+				if (baseline) {
+					zoom.translate(baseline.translate());
+					zoom.scale(baseline.scale());}
 				return zoom;},
 			getLabelPosition: function(view, size) {
 				var minAngle = this.angle * view.index,

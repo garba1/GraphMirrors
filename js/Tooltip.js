@@ -11,6 +11,8 @@
 				ignoreH: true}
 		});
 
+		$P.tooltip.hideTimer = null;
+
 		$P.tooltip.show = function(contents) {
 			this.element.innerHTML = contents;
 			d3.select(this.element).transition().duration(50).style('opacity', 0.9);

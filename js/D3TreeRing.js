@@ -36,7 +36,7 @@
 			this.localExpressionPercent = config.localExpressionPercent || false;
 			this.orthologFile = config.orthologFile || null;
 			this.expressionFile = config.expressionFile || null;
-			this.fisher = config.fisher || false;
+			this.fisher = (undefined !== config.fisher) ? config.fisher : true;
 			this.initialized = false;
 			this.nodeTextSize = config.nodeTextSize || 10;
 			this.barLength = 60;
@@ -440,6 +440,11 @@
 
 							x = _this.dragAbsolute.x + _this.parent.x + _this.parent.w * 0.5,
 							y = _this.dragAbsolute.y + _this.parent.y + _this.parent.h * 0.5;
+							if (self.parent.contains(x, y)) {
+								d3.select(this).attr('transform', null);
+								_this.dragging = null;
+								_this.dragOffset = null;
+								return;}
 
 							event = {
 								name: 'dragPathway',
@@ -1494,11 +1499,11 @@
 									fontsize: 12,
 									title: 'Expression:',
 									entries: [
-										{name: 'Up:',
+										{name: self.parent.upName + ':',
 										 size: self.barLength,
 										 exponentColor: self.color.upExponent,
 										 digitColor: self.color.upDigit},
-										{name: 'Down:',
+										{name: self.parent.downName + ':',
 										 size: self.barLength,
 										 exponentColor: self.color.downExponent,
 										 digitColor: self.color.downDigit}]});

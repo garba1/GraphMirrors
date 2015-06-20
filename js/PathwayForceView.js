@@ -10,6 +10,7 @@
 
 			$P.ForceView.call(self, config);
 
+			self.visibleFilters = {};
 			self.textTransform = self.shape.textTransform(self);
 
 			if (config.displayArgument) {
@@ -352,6 +353,7 @@
 					self.drawBackground.append('circle')
 						.attr('class', 'follower')
 						.attr('follow-id', d.layoutId)
+						.attr('follow-type', 'protein')
 						.attr('stroke', 'none')
 						.attr('fill', location.color)
 						.attr('fill-opacity', 0.25)
@@ -395,12 +397,9 @@
 			self.entityBackgrounds();
 			// The main circle.
 			self.entities.diminished
-				.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', 'gray')
-				.attr('width', nodeSize(4)).attr('height', nodeSize(4))
-				.attr('x', nodeSize(-1.5)).attr('y', nodeSize(-1.5))
-				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3))
+				.each($P.D3.Diminished.appender({
+					size: nodeSize(14)}))
+				.selectAll('.diminished-entity')
 				.attr('pointer-events', 'all')
 				.attr('transform', textTransform)
 				.on('click', function(d) {
@@ -414,12 +413,10 @@
 					console.log(d);})
 				.append('title').text(nodeTitle);
 			self.entities.proteins
-				.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor.bind(self))
-				.attr('width', nodeSize(12)).attr('height', nodeSize(8))
-				.attr('x', nodeSize(-6)).attr('y', nodeSize(-4))
-				.attr('rx', nodeSize(3)).attr('ry', nodeSize(3))
+				.each($P.D3.Protein.appender({
+					size: nodeSize(14),
+					fill: self.getExpressionColor.bind(self)}))
+				.selectAll('.protein')
 				.attr('pointer-events', 'all')
 				.attr('transform', textTransform)
 				.on('click', function(d) {
@@ -654,9 +651,269 @@
 					.attr('stroke', 'black')
 					.attr('fill', 'gray')
 					.attr('transform', this.textTransform)
-					.attr('width', this.nodeSize(14)).attr('height', this.nodeSize(10))
+					.attr('width', this.nodeSize(14)).attr('height', this.nodeSize(8))
 					.attr('x', this.nodeSize(-7)).attr('y', this.nodeSize(-5))
-					.attr('rx', this.nodeSize(3)).attr('ry', this.nodeSize(3));}
+					.attr('rx', this.nodeSize(3)).attr('ry', this.nodeSize(3));},
+
+			isNodeVisible: function(node) {
+				var key;
+				if ('location' === node.klass) {key = 'location';}
+				else if ('reaction' === node.klass) {key = 'reaction';}
+				else if ('paper' === node.klass) {key = 'paper';}
+				else if (!this.inPathway(node)) {key = 'diminished';}
+				else if ('protein' === node.type.toLowerCase()) {key = 'protein';}
+				else if (-1 !== ['SmallMolecule','Rna','Dna'].indexOf(node.type)) {key = 'small';}
+				else if ('Complex' === node.type) {key = 'complex';}
+				else if ('entity' === node.klass) {key = 'other';}
+				var result = this.visibleFilters[key];
+				if (undefined === result) {result = true;}
+				return result;},
+
+			setVisibleFilter: function(id, state) {
+				var self = this;
+				self.visibleFilters[id] = state;
+
+				function updateLinks(linkSelection) {
+					linkSelection
+						.style('display', function(d, i) {
+							if (d.source && self.isNodeVisible(d.source)
+									&& d.target && self.isNodeVisible(d.target)) {
+								return '';}
+							return 'none';});}
+
+				function updateLabels() {
+					self.entityLabels
+						.style('display', function(d, i) {
+							return self.isNodeVisible(self.layout.getNode('entity:' + d.id))
+								? '' : 'none';});}
+
+				if ('paper' === id) {
+					self.papers.style('display', state ? '' : 'none');
+					updateLinks(self.paperLinks);}
+				else {
+					if ('diminished' === id) {
+						self.entities.diminished.style('display', state ? '' : 'none');}
+					if ('protein' === id) {
+						self.entities.proteins.style('display', state ? '' : 'none');}
+					if ('small' === id) {
+						self.entities.small.style('display', state ? '' : 'none');}
+					if ('complex' === id) {
+						self.entities.complex.style('display', state ? '' : 'none');}
+					if ('other' === id) {
+						self.entities.other.style('display', state ? '' : 'none');}
+					if ('reaction' === id) {
+						self.reactions.style('display', state ? '' : 'none');
+						updateLinks(self.paperLinks);}
+					updateLabels();
+					updateLinks(self.reactionLinks);
+					updateLinks(self.entityLabelLinks);}
+				updateLinks(self.locationLinks);
+
+				self.element.selectAll('.follower').style('display', function(d) {
+					var follow = d3.select(this).attr('follow-id');
+					var node = self.layout.getNode(follow);
+					return self.isNodeVisible(node) ? '' : 'none';});
+
+				console.log(self.visibleFilters);
+			}
 
 		});
+
+	$P.PathwayForceView.makeLegend = function(parentSelection, width, height, callback) {
+		var legend = parentSelection.append('svg').attr('class', 'legend');
+
+		legend.append('line')
+			.attr('stroke', 'black')
+			.attr('stroke-width', 3)
+			.attr('x1', 0).attr('y1', 0)
+			.attr('x2', 0).attr('y2', height);
+
+		var leftX = width - 115;
+		var textX = leftX + 20;
+		var y = 20;
+
+		var checkboxes = {};
+
+		function checkbox(id, y) {
+			checkboxes[id] = new $P.D3.Checkbox({
+				parentSelection: legend,
+				x: leftX + 3, y: y - 1,
+				state: true,
+				callback: function(state) {
+					callback(id, state);}
+			});}
+
+		checkbox('protein', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Protein');
+
+
+		legend.each($P.D3.Protein.appender({
+			x: leftX + 99,
+			y: y + 4}));
+
+		y += 24;
+		checkbox('small', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Small');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', 'white')
+			.attr('r', 7.5)
+			.attr('transform', 'translate(' + (leftX + 98) + ','+y+')');
+
+		y += 24;
+		checkbox('complex', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Complex');
+
+		legend.append('rect')
+			.attr('stroke', 'black')
+			.attr('fill', 'white')
+			.attr('width', 15).attr('height', 15)
+			.attr('transform', 'translate('+(leftX+98)+','+(y-11)+')rotate(45)');
+
+		y += 24;
+		checkbox('other', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Other');
+
+		legend.append('rect')
+			.attr('stroke', 'black')
+			.attr('fill', 'white')
+			.attr('width', 15).attr('height', 15)
+			.attr('transform', 'translate('+(leftX+90)+','+(y-7)+')');
+
+		y += 30;
+		checkbox('diminished', y);
+		legend.append('text')
+			.style('font-size', '12px')
+			.attr('x', textX)
+			.attr('y', y - 8)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Not in');
+		legend.append('text')
+			.style('font-size', '12px')
+			.attr('x', textX)
+			.attr('y', y + 8)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Pathway');
+		legend.each($P.D3.Diminished.appender({
+			x: leftX + 98,
+			y: y}));
+
+		y += 30;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Expression:');
+
+		y += 19;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX + 12)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Up');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', '#CCCC00')
+			.attr('r', 7.5)
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		y += 19;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX + 12)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Down');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', '#0000CC')
+			.attr('r', 7.5)
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		y += 20;
+		checkbox('reaction', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Reaction');
+
+		legend.append('rect')
+			.attr('stroke', 'black')
+			.attr('fill', 'red')
+			.attr('width', 7.5).attr('height', 7.5)
+			.attr('transform', 'translate('+(leftX+94)+','+(y-4)+')');
+
+		y += 20;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Crosstalk');
+
+		legend.each($P.D3.Protein.appender({
+			crosstalk: true,
+			x: leftX + 98,
+			y: y + 4}));
+
+		y += 20;
+		checkbox('paper', y);
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Paper');
+
+		legend.append('polygon')
+			.attr('points', '7.5,6 -7.5,6 0,-8.25')
+			.style('stroke', 'black')
+			.style('fill', 'cyan')
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		return legend;};
 })(PATHBUBBLES);

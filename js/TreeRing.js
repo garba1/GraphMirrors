@@ -26,7 +26,7 @@
 			this.displayMode = config.displayMode || 'title';
 			this._species = config.species || 'Gallus';
 			this._localExpressionPercent = true;
-			this._fisher = config.fisher || false;
+			this._fisher = (undefined === config.fisher) ? true : config.fisher;
 			this.orthologFile = config.orthologFile || null;
 			this.orthologLabel = '';
 			if (this.orthologFile) {this.orthologLabel = this.orthologFile.name;}
@@ -43,6 +43,14 @@
 			$P.BubbleBase.call(this, config);
 			return this;},
 		{
+			get upName() {return this._upName || 'Up';},
+			set upName(value) {
+				if (value === this._upName) {return;}
+				this._upName = value;},
+			get downName() {return this._downName || 'Down';},
+			set downName(value) {
+				if (value === this._downName) {return;}
+				this._downName = value;},
 			get minRatio() {return this._minRatio;},
 			set minRatio(value) {
 				if (value === this._minRatio) {return;}
@@ -453,6 +461,10 @@
 						dataType: bubble.species,
 						customExpression: expressionData,
 						customExpressionProcessed: null};
+					if (expressionData.downCutoff) {bubble.minRatio = expressionData.downCutoff;}
+					if (expressionData.upCutoff) {bubble.maxRatio = expressionData.upCutoff;}
+					if (expressionData.upName) {bubble.upName = expressionData.upName;}
+					if (expressionData.downName) {bubble.downName = expressionData.downName;}
 					bubble.expressionLabel = bubble.selectedFile.name;
 					bubble.experimentType = 'Expression';
 					bubble.createSvg(config);

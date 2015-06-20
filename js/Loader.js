@@ -57,38 +57,36 @@
 								obj.dbId = temps[1];
 								result.push(obj);
 							}
-							callback(result);
 						}
 						else if (_this.type == "Expression") {
 							tempdata = tempdata.replace(/\r\n/g, '\n');
 							tempdata = tempdata.replace(/\r/g, '\n');
-							var expression = tempdata.split("\n");
+							var lines = tempdata.split('\n');
 
-							for (var j = 0; j < expression.length; ++j) {
-								if (expression[j] == ""||expression[j] == " ") {
-									continue;
-								}
-								var temps = expression[j].split("\t");
-								if(temps.length!==3)
-								{
-									alert("Please check your gene expression data format.!");
-									return;
-								}
-								if (temps[0] == "gene_id" ||typeof temps[1] !=="string"|| temps[2] == "Infinity" || temps[2]=="NaN" || isNaN(parseFloat(temps[2]))|| temps[2] == "0"||temps[1]==undefined) {
-									continue;
-								}
-
-								var obj = {};
-								obj.gene_id = temps[0];
-								obj.symbol = temps[1].toUpperCase();
-								//                        obj.ratio = Math.log2(parseFloat(temps[2]));
-								obj.ratio = Math.log(parseFloat(temps[2]))/Math.log(2);
-								result.push(obj);
-							}
-							callback(result);
-						}
-
-
+							lines.forEach(function(line) {
+								var tokens = line.split('\t');
+								if (tokens.length < 2
+										|| 'gene_id' === tokens[0]
+										|| 'Infinity' === tokens[2]) {
+									return;}
+								else if ('up_name' === tokens[0]) {
+									result.upName = tokens[1];}
+								else if ('down_name' === tokens[0]) {
+									result.downName = tokens[1];}
+								else if ('up_cutoff' === tokens[0]) {
+									result.upCutoff = Math.log(parseFloat(tokens[1]))/Math.log(2);}
+								else if ('down_cutoff' === tokens[0]) {
+									result.downCutoff = Math.log(parseFloat(tokens[1]))/Math.log(2);}
+								else if ('up_cutoff_log2' === tokens[0]) {
+									result.upCutoff = parseFloat(tokens[1]);}
+								else if ('down_cutoff_log2' === tokens[0]) {
+									result.downCutoff = parseFloat(tokens[1]);}
+								else if (!isNaN(parseFloat(tokens[2]))) {
+									result.push({
+										gene_id: tokens[0],
+										symbol: tokens[1].toUpperCase(),
+										ratio: Math.log(parseFloat(tokens[2]))/Math.log(2)});}});}
+						callback(result);
 					}
 				};
 				reader.readAsText(url, "UTF-8");
