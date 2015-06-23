@@ -9,7 +9,7 @@
 			config.groupMenu = true;
 			$P.BubbleBase.call(this, config);
 
-			self.mode = config.mode || 'split';
+			self.mode = config.mode || 'soup';
 			self.pathways = config.pathways || [];
 
 			self.contentConfig = config.contentConfig || {};
@@ -23,7 +23,7 @@
 					console.log('display', self.content.display);
 					if ('split' === self.mode) {self.content.layoutSplit();}
 					if ('soup' === self.mode) {self.content.layoutSoup();}
-					self.content.updateContentPosition();}}));
+					self.content.updateSvgPosition();}}));
 			self.repositionMenus();},
 		{
 			onAdded: function(parent) {
