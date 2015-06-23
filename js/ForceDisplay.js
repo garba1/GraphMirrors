@@ -6,6 +6,8 @@
 		function ForceDisplay(config) {
 			var i, view;
 
+			this.views = [];
+
 			this.svg = config.svg;
 			if (!this.svg) {
 				console.error('ForceDisplay(', config, '): Missing svg.');
@@ -38,7 +40,6 @@
 			if (this.zoomBase) {
 				console.log(this.zoomBase, this.zoomBase.translate(), this.zoomBase.scale());}
 
-			this.views = [];
 			for (i = 0; i < this.viewCount; ++i) {
 				view = new this.viewConstructor({
 					svg: this.svg,
@@ -62,6 +63,17 @@
 				.attr('y2', function(d) {return d.y2;});
 		},
 		{
+			get parent() {return this._parent;},
+			set parent(value) {
+				if (value === this._parent) {return;}
+				this._parent = value;
+				this.views.forEach(function(view) {view.parent = value;});},
+			get parentBubble() {return this._parentBubble;},
+			set parentBubble(value) {
+				if (value === this._parentBubble) {return;}
+				this._parentBubble = value;
+				this.views.forEach(function(view) {view.parentBubble = value;});},
+
 			set size(value) {
 				if (this.w === value[0] && this.h === value[1]) {return;}
 				this.w = value[0];
@@ -77,7 +89,21 @@
 
 			delete: function() {
 				this.parent.selectAll('.divider').remove();
-				this.views.forEach(function(view) {view.delete();});}
+				this.views.forEach(function(view) {view.delete();});},
+
+			saveCallback: function(save, id) {
+				var result = {};
+				save.objects[id] = result;
+				result.layout = save.save(this.layout);
+				result.shape = save.save(this.shape);
+				result.viewConstructor = this.viewConstructor.name;
+				return id;}
 		});
+
+	$P.ForceDisplay.loader = function(load, id, data) {
+		return new $P.ForceDisplay({
+			layout: load.loadObject(data.layout),
+			shape: load.loadObject(data.shape),
+			viewConstructor: $P.classes[data.viewConstructor]});};
 
 })(PATHBUBBLES);

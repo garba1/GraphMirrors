@@ -18,6 +18,8 @@
 
 			this.selected_file = null;
 
+			this.svgConfig = config.svgConfig;
+
 			this.legendWidth = 140;
 			this._minRatio = config.minRatio || -1.5;
 			this._maxRatio = config.maxRatio || 1.5;
@@ -131,7 +133,8 @@
 						if (target === self) {return;}
 						if (target instanceof $P.TreeRing) {target.createSvg(config);}});}
 
-				var actual_config = Object.create(this.svg || null); // Automatically use parameters from existing svg.
+				// Automatically use parameters from existing svg.
+				var actual_config = Object.create(this.svg || this.svgConfig || null);
 				if (!this.dataType) {this.dataType = 'Gallus';}
 				$.extend(actual_config, {
 					defaultRadius: Math.min(this.w - this.legendWidth, this.h) - 30,
@@ -231,11 +234,17 @@
 			},
 			drawExtra: function(ctx, scale) {this.processingStatus.draw(ctx, this.x+this.w/2, this.y+this.h/2);},
 
-			getPersistObject: function(info) {
-				var persist = $P.BubbleBase.prototype.getPersistObject.call(this, info);
-				persist.svg = this.svg.getPersistData();
-				delete persist.config.selectedData;
-				return persist;},
+			saveKeys: [].concat($P.Bubble.prototype.saveKeys, [
+				'dataName',
+				'dataType',
+				'experimentType',
+				'species',
+				'legendWidth',
+				'minRatio',
+				'maxRatio',
+				'crosstalkLevel',
+				'displayMode',
+				'svg']),
 
 			loadPersistObject: function(persist) {
 				$P.BubbleBase.prototype.loadPersistObject.call(this, persist);
@@ -471,4 +480,17 @@
 					$(menu.element).find('#fisherBlock').show();
 					$(menu.element).find('#localPercentBlock').show();});}
 		});
+
+	$P.TreeRing.loader = function(load, id, data) {
+		var config = {};
+		$P.TreeRing.prototype.saveKeys.forEach(function(key) {
+			config[key] = load.loadObject(data[key]);});
+		delete config.svg;
+		config.svgConfig = load.loadObject(data.svg);
+
+		var bubble = new $P.TreeRing(config);
+		load.objects[id] = bubble;
+
+		return bubble;};
+
 })(PATHBUBBLES);

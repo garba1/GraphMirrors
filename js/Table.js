@@ -18,8 +18,7 @@
 
 			self.dbId = config.dbId;
 			self.dataName = config.name || null;
-			if (self.dataName) {self.name = self.dataName;}
-			else {self.name = 'Table';}
+			self.name = config.name || config.dataName || 'Table';
 			self.selectedFile = null;
 			self.data = config.data || null;
 			self.queryObject = config.queryObject || null;
@@ -58,22 +57,34 @@
 
 			},
 
-			getPersistObject: function(info) {
-				var persist = $P.BubbleBase.prototype.getPersistObject.call(this, info);
-				delete persist.config.sourceRing;
-				return persist;},
-
 			exportData: function() {
 				if (!this.svg) {return false;}
 				var data = this.svg.exportData();
-				var a = document.createElement('a');
 				var text = data.map(function(row) {return row.join(',');}).join('\n');
-				a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-				a.setAttribute('download', this.name + '.csv');
-				a.style.display = 'none';
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				return true;}
+				$P.saveString(text, this.name + '.csv');
+				return true;},
+
+			saveKeys: [].concat($P.Bubble.prototype.saveKeys, [
+				'dbId',
+				'dataName',
+				'name',
+				'data',
+				'queryObject',
+				// grab crosstalking from parent
+				'experimentType',
+				'keepQuery',
+				'sourceRing'])
 		});
+
+	$P.Table.loader = function(load, id, data) {
+		var config = {};
+		$P.Table.prototype.saveKeys.forEach(function(key) {
+			config[key] = load.loadObject(data[key]);});
+
+		var bubble = new $P.Table(config);
+		load.objects[id] = bubble;
+
+		return bubble;};
+
+
 })(PATHBUBBLES);

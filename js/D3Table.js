@@ -190,9 +190,10 @@
 
 			onClickCell: function(button, datum, index) {
 				var i, treeRing, table, symbolIndex, pathways;
+				var self = this;
 				if('symbol' === datum.key) {
 					if ('left' === button) {
-						this.parent.parent.add(new $P.IFrameBubble({
+						this.parent.parent.add(new $P.Bubble.IFrame({
 							w: 560,
 							h: 500,
 							url: 'http://www.ncbi.nlm.nih.gov/gquery/?term=' + datum.value}));}

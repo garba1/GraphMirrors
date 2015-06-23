@@ -71,7 +71,14 @@
 
 			onTick: function(layout) {},
 			updateClip: function(view) {},
-			getDividers: function(count) {}
+			getDividers: function(count) {},
+
+			saveKeys: [
+				'count',
+				'translate',
+				'scale',
+				'w', 'h']
+
 		});
 
 	$P.ForceShape.Centered = $P.defineClass(
@@ -328,6 +335,7 @@
 							.plus(new $P.Vector2D(this.w * 0.5, this.h * 0.5));
 				return [mousePosition[0] - center.x, mousePosition[1] - center.y];
 			}
+
 		});
 
 })(PATHBUBBLES);

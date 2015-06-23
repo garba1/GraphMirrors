@@ -260,28 +260,12 @@
 					this.title.fillStyle = style;}
 				$P.state.markDirty();},
 
-			getPersistObject: function(info) {
-				info.bubbles[this.id] = this;
-				var config = $.extend({}, this.config);
-				delete config.parent;
-				delete config.children;
-				config.x = this.x;
-				config.y = this.y;
-				config.w = this.w;
-				config.h = this.h;
-				config.minSize = this.minSize;
-				var persist = {
-					__persist: true,
-					class: this.class,
-					config: config,
-					id: this.id,
-					children: []};
-				if (this.children) {
-					this.children.forEach(function(child) {
-						if (child.getPersistObject) {
-							persist.children.push(child.getPersistObject(info));}});}
-				return persist;}
-
+			saveKeys: [
+				'x', 'y', 'w', 'h',
+				'strokeStyle', 'fillStyle',
+				'cornerRadius', 'lineWidth',
+				'minSize',
+				'name']
 		});
 	$P.Bubble = $P.BubbleBase;
 

@@ -1,15 +1,14 @@
 (function($P) {
 	'use strict';
 
-	$P.IFrameBubble = $P.defineClass(
+	$P.Bubble.IFrame = $P.defineClass(
 		$P.BubbleBase,
 		function IFrameBubble(config) {
 			config = $.extend(config, {
 				closeMenu: true,
 				groupMenu: true});
-			$P.BubbleBase.call(this, config);
-			this.url = config.url;
-		},
+			$P.Bubble.call(this, config);
+			this.url = config.url;},
 		{
 			onAdded: function(parent) {
 				if ($P.BubbleBase.prototype.onAdded.call(this, parent) || this.iframe) {return;}
@@ -21,8 +20,19 @@
 				config.h -= 16;
 				config.parent = this;
 				config.url = this.url;
-				this.iframe = new $P.IFrame(config);}
+				this.iframe = new $P.IFrame(config);},
+
+			saveKeys: [].concat($P.Bubble.prototype.saveKeys, ['url'])
 
 		});
+
+	$P.Bubble.IFrame.loader = function(load, id, data) {
+		var config = {};
+		$P.Bubble.IFrame.prototype.saveKeys.forEach(function(key) {
+			config[key] = load.loadObject(data[key]);});
+		var bubble = new $P.Bubble.IFrame(config);
+		load.objects[id] = bubble;
+
+		return bubble;};
 
 })(PATHBUBBLES);

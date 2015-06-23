@@ -6,10 +6,13 @@
 var PATHBUBBLES = PATHBUBBLES || {};
 var $P = PATHBUBBLES;
 
+$P.classes = {};
+
 /**
  * Simple class inheritance.
  * Does not handle calling the superclass constructor.
  * Defines superclass on the prototype.
+ * Stores in $P.classes[name of init function].
  * @param {?Function} superclass - the parent class
  * @param {!Function} init - the initialization function
  * @param {Object} prototype - the prototype methods
@@ -20,16 +23,9 @@ $P.defineClass = function(superclass, init, prototype) {
 		Object.defineProperty(init.prototype, name, Object.getOwnPropertyDescriptor(prototype, name));});
 	init.prototype.constructor = init;
 	init.prototype.superclass = superclass;
-	return init;
-};
-
-
-/**
- * Retrieves a specific value from the passed object.
- * @callback getter
- * @param {object} object - the object to retrieve from
- * @returns {*} - a specific value on the object
- */
+	init.prototype.classname = init.name;
+	$P.classes[init.name] = init;
+	return init;};
 
 /**
  * Create a function that retrieves a specific key from an object.
@@ -301,5 +297,36 @@ $P.asyncOrdered = function(callbacks) {
 		//	console.log('FISHER:', inA, outA, inB, outB, Math.exp(result));}
 		return Math.exp(result);};
 
+	$P.saveArray = function(array, filename) {
+		var blob = new Blob(array, {type: 'octet/stream'});
+		var url = window.URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.setAttribute('href', url);
+		a.setAttribute('download', filename || 'download');
+		a.style.display = 'none';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);};
+
+	$P.saveString = function(string, filename) {
+		var a = document.createElement('a');
+		a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(string));
+		a.setAttribute('download', filename || 'download');
+		a.style.display = 'none';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);};
+
+	$P.loadFile = function(callback) {
+		var input = document.createElement('input');
+		input.setAttribute('type', 'file');
+		input.style.opacity = 0;
+		$(input).change(function() {
+			callback(input.files[0]);
+			document.body.removeChild(input);});
+		document.body.appendChild(input);
+		input.click();
+		return input;};
 
 })(PATHBUBBLES);

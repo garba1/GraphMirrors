@@ -10,7 +10,7 @@
 			var size = config.size || 12;
 			var round = config.round || 2;
 			var stroke = config.stroke || 'black';
-			var strokeWidth = config.strokeWidth || 2;
+			var strokeWidth = config.strokeWidth || 1;
 			var fill = config.fill || 'white';
 			this.base = parent.append('g')
 				.style('pointer-events', 'all')

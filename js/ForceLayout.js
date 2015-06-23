@@ -7,19 +7,21 @@
 			config = config || {};
 			this.force = d3.layout.force();
 			this.nodes = this.force.nodes();
-			this.nodes.indexed = {};
+			this.nodeData = config.nodeData || {};
+			this.nodeData.indexed = this.nodeData.indexed || {};
 			this.links = this.force.links();
-			this.links.indexed = {};
-			this.size = [config.width || 500, config.height || 500];
+			this.linkData = config.linkData || {};
+			this.linkData.indexed = this.linkData.indexed || {};
+			this.size = config.size || [config.width || 500, config.height || 500];
 			this.force.on('tick', this.onTick.bind(this));
+			this.nodeAddTriggers = {};
+			this.linkAddTriggers = {};
 			if (config.nodes) {this.addNodes(config.nodes);}
 			if (config.links) {this.addLinks(config.links);}
 			this.tickListeners = config.tickListeners || [];
 			this.changeListeners = config.changeListeners || [];
-			this.needsUpdate = false;
+			this.unpositionedNodes = false;
 			this.shape = config.shape || null;
-			this.nodeAddTriggers = {};
-			this.linkAddTriggers = {};
 
 			this.force
 				.gravity(0)
@@ -32,6 +34,8 @@
 				.linkDistance(function(link) {
 					if (link.linkDistance) {return link.linkDistance;}
 					return 50;});
+			this.force.start();
+			this.force.alpha(0);
 		},
 		{
 			get size() {return this._size;},
@@ -40,23 +44,30 @@
 				this._size = value;
 				this.force.size(value);},
 			addNode: function(node) {
-				this.needsUpdate = true;
 				node.layoutId = node.layoutId || ((node.klass || '') + ':' + (node.id || node.name || ''));
-				if (this.nodes.indexed[node.layoutId]) {return null;}
+				if (this.nodeData.indexed[node.layoutId]) {
+					console.log('EXISISTS', this.nodeData.indexed[node.layoutId]);
+					return null;}
+				this.unpositionedNodes = true;
 				node.links = [];
 				this.nodes.push(node);
-				this.nodes.indexed[node.layoutId] = node;
+				this.nodeData.indexed[node.layoutId] = node;
 				if (node.klass) {
-					this.nodes[node.klass] = this.nodes[node.klass] || [];
-					this.nodes[node.klass].push(node);}
+					this.nodeData[node.klass] = this.nodeData[node.klass] || [];
+					this.nodeData[node.klass].push(node);}
 				if (this.nodeAddTriggers[node.layoutId]) {
 					this.nodeAddTriggers[node.layoutId].forEach(function(callback) {callback(node);});
 					delete this.nodeAddTriggers[node.layoutId];}
 				return node;},
-			getNode: function(layoutId) {return this.nodes.indexed[layoutId];},
-			addNodes: function(nodes) {this.nodes.forEach(this.addNode.bind(this));},
+			getNode: function(layoutId) {return this.nodeData.indexed[layoutId];},
+			addNodes: function(nodes) {nodes.forEach(this.addNode.bind(this));},
 			getNodes: function(klass) {
-				if (klass) {return this.nodes[klass];}
+				if (klass) {
+					var list = this.nodeData[klass];
+					if (!list) {
+						list = [];
+						this.nodeData[klass] = list;}
+					return list;}
 				return this.nodes;},
 			// Applies function to the node immediately if it's present,
 			// otherwise it is applied when the node is added.
@@ -76,12 +87,12 @@
 			removeNode: function(layoutId) {
 				var self = this, node = this.getNode(layoutId), index;
 				if (!node) {return false;}
-				delete this.nodes.indexed[layoutId];
+				delete this.nodeData.indexed[layoutId];
 				index = this.nodes.indexOf(node);
 				this.nodes.splice(index, 1);
 				if (node.klass) {
-					index = this.nodes[node.klass].indexOf(node);
-					this.nodes[node.klass].splice(index, 1);}
+					index = this.nodeData[node.klass].indexOf(node);
+					this.nodeData[node.klass].splice(index, 1);}
 				node.links.forEach(function(link) {
 					if (link && link.layoutId) {
 						self.removeLink(link.layoutId);}});
@@ -119,13 +130,13 @@
 					target.links.push(link);}},
 			addLink: function(link) {
 				if (!link.source || !link.target) {console.error('Illegal Link');}
-				if (this.links.indexed[link.id]) {return false;}
+				if (this.linkData.indexed[link.id]) {return false;}
 				link.layoutId = link.layoutId || ((link.klass || '') + ':' + (link.id || link.name || ''));
 				this.links.push(link);
-				this.links.indexed[link.layoutId] = link;
+				this.linkData.indexed[link.layoutId] = link;
 				if (link.klass) {
-					this.links[link.klass] = this.links[link.klass] || [];
-					this.links[link.klass].push(link);}
+					this.linkData[link.klass] = this.linkData[link.klass] || [];
+					this.linkData[link.klass].push(link);}
 				if (link.source && link.source.layoutId) {
 					this.applyToNode(link.source.layoutId, function(node) {node.links.push(link);});}
 				if (link.target && link.target.layoutId) {
@@ -137,12 +148,12 @@
 			removeLink: function(layoutId) {
 				var link = this.getLink(layoutId), index;
 				if (!link) {console.error('xxxxx'); return;}
-				delete this.links.indexed[layoutId];
+				delete this.linkData.indexed[layoutId];
 				index = this.links.indexOf(link);
 				this.links.splice(index, 1);
 				if (link.klass) {
-					index = this.links[link.klass].indexOf(link);
-					this.links[link.klass].splice(index, 1);}
+					index = this.linkData[link.klass].indexOf(link);
+					this.linkData[link.klass].splice(index, 1);}
 				if (link.source && link.source.layoutId) {
 					this.applyToNode(link.source.layoutId, function(node) {
 						$P.removeFromList(node.links, link);});}
@@ -150,15 +161,15 @@
 					this.applyToNode(link.target.layoutId, function(node) {
 						$P.removeFromList(node.links, link);});}
 			},
-			getLink: function(layoutId) {return this.links.indexed[layoutId];},
-			addLinks: function(links) {this.links.forEach(this.addLink.bind(this));},
+			getLink: function(layoutId) {return this.linkData.indexed[layoutId];},
+			addLinks: function(links) {links.forEach(this.addLink.bind(this));},
 			getLinks: function(klass) {
 				var links;
 				if (klass) {
-					links = this.links[klass];
+					links = this.linkData[klass];
 					if (!links) {
 						links = [];
-						this.links[klass] = links;}
+						this.linkData[klass] = links;}
 					return links;}
 				return null;},
 			// Applies function to the link immediately if it's present,
@@ -181,12 +192,34 @@
 				this.tickArgument = listenerArg;
 				for (i = 0; i < count; ++i) {this.force.tick();}
 				this.tickArgument = null;},
+			positionNewNodes: function() {
+				if (this.unpositionedNodes) {
+					var alpha = this.force.alpha();
+					this.force.start();
+					this.force.alpha(alpha);
+					this.unpositionedNodes = false;}},
 			onTick: function() {
 				var self = this;
+				this.positionNewNodes();
 				if (this.shape) {this.shape.onTick(this);}
 				this.tickListeners.forEach(function(listener) {listener(self, self.tickArgument);});},
 			registerTickListener: function(listener) {
-				this.tickListeners.push(listener);}
+				this.tickListeners.push(listener);},
+
+			saveCallback: function(save, id) {
+				var self = this;
+				var result = {};
+				save.objects[id] = result;
+
+				result.size = save.save(self.size);
+				result.nodes = save.save(self.nodes);
+				result.nodeData = save.save(self.nodeData);
+				result.links = save.save(self.links);
+				result.linkData = save.save(self.linkData);
+				result.shape = save.save(self.shape);
+				result.alpha = this.force.alpha();
+
+				return id;}
 		});
 
 })(PATHBUBBLES);

@@ -66,50 +66,25 @@
 				selector: '#bgCanvas',
 				callback: function (key) {
 					var bubble, state, objects;
-					if (key === 'Open_TreeRing') {
+					if (key === 'treering') {
 						$P.state.scene.add(new $P.TreeRing({
 							x: mousePosX + $P.state.scrollX, y: mousePosY, w: 820, h: 700,
 							dataName: 'human'}));}
 					else if ('save' === key) {
-						state = $P.state.scene.getPersistObject();
-						objects = {};
-						function replacer(key, value) {
-							if (value && ('object' === typeof value) && value.__persist) {
-								objects[value.id] = value;
-								return {__object_id: value.id};}
-							return value;}
-						window.localStorage.setItem('graphmirrors.save', JSON.stringify(state, replacer));
-						console.log(objects);
-						window.localStorage.setItem('graphmirrors.save.objects', JSON.stringify(objects));}
+						$P.Save($P.state).write();}
 					else if ('load' === key) {
-						function objectReviver(key, value) {
-							console.log('revive', 'key', key, 'value', value);
-							var config = value.config;
-							config.reviving = true;
-							var object = $P[value.class].call(null, value.config);
-							if (object.loadPersistObject) {
-								object.loadPersistObject();}
-							return object;}
-						objects = JSON.parse(window.localStorage.getItem('graphmirrors.save.objects'), objectReviver);
-						state = window.localStorage.getItem('graphmirrors.save');
-						console.log('LOAD', state);
-						function reviver(key, value) {
-							if ('object' === typeof value && value.__object_id) {
-								return objects[value.__object_id];}
-							return value;}
-						$P.state.scene.loadPersistObject(JSON.parse(state, reviver));}
+						function load(file) {
+							$P.Load(file);}
+						$P.loadFile(load);}
 					else if ('record' === key) {
 						$P.state.scene.recording = [];}
-					else if ('split' === key) {
-						bubble = new $P.SplitForce({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 750, h: 600});
-						$P.state.scene.add(bubble);}
-					else if ('open_force' == key) {
-						bubble = new $P.Force({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 400, h: 400});
+					else if ('force' === key) {
+						bubble = new $P.Bubble.Force({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 750, h: 600});
 						$P.state.scene.add(bubble);}
 					else if (key === 'Delete_All') {
 						if (window.confirm('Delete all bubbles?')) {
 							$P.state.scene.deleteAll();}}
-					else if (key === 'Open_Help') {
+					else if (key === 'help') {
 						window.open('documents/manual.pdf');}
 					else if (key === 'Toggle_Hints') {
 						$P.state.hintsEnabled = !$P.state.hintsEnabled;
@@ -120,14 +95,13 @@
 						$P.state.markDirty();}
 				},
 				items: {
-					'split': {name: 'Open Split Diagram'},
-					'open_force': {name: 'Open Soup Diagram'},
-					//save: {name: 'Save'},
-					//load: {name: 'Load'},
+					'help': {name: 'Open Manual'},
+					'treering': {name: 'Open Entire Pathway'},
+					'force': {name: 'Open Force Bubble'},
+					save: {name: 'Save'},
+					load: {name: 'Load'},
 					record: {name: 'Start Recording'},
-					'Open_TreeRing': {name: 'Open Entire Pathway'},
 					'Delete_All': {name: 'Delete All'},
-					'Open_Help': {name: 'Open Help'},
 					'Toggle_Hints': {name: 'Toggle Hints'},
 					'Toggle_Links': {name: 'Toggle Links'}}
 			});}

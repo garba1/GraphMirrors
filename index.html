@@ -43,11 +43,11 @@
     <script src="./js/HintBox.js" type="text/javascript"></script>
     <script src="./js/Scene.js" type="text/javascript"></script>
     <script src="./js/BubbleBase.js" type="text/javascript"></script>
-    <script src="./js/Bubble/Html.js" type="text/javascript"></script>
+    <script src="./js/Bubble/IFrame.js" type="text/javascript"></script>
+    <script src="./js/Bubble/Force.js" type="text/javascript"></script>
+    <script src="./js/Bubble/ForceContent.js" type="text/javascript"></script>
     <script src="./js/IFrame.js" type="text/javascript"></script>
-    <script src="./js/IFrameBubble.js" type="text/javascript"></script>
     <script src="./js/PathwayDiagram.js" type="text/javascript"></script>
-    <script src="./js/Force.js" type="text/javascript"></script>
     <script src="./js/ForceLayout.js" type="text/javascript"></script>
     <script src="./js/PathwayForceLayout.js" type="text/javascript"></script>
     <script src="./js/ForceView.js" type="text/javascript"></script>
@@ -55,9 +55,6 @@
     <script src="./js/SoupForceView.js" type="text/javascript"></script>
     <script src="./js/ForceDisplay.js" type="text/javascript"></script>
     <script src="./js/ForceShape.js" type="text/javascript"></script>
-    <script src="./js/SplitForce.js" type="text/javascript"></script>
-    <script src="./js/D3SplitForce.js" type="text/javascript"></script>
-    <script src="./js/D3Force.js" type="text/javascript"></script>
     <script src="./js/MirrorForce.js" type="text/javascript"></script>
     <script src="./js/D3MirrorForce.js" type="text/javascript"></script>
     <script src="./js/Biomolecule.js" type="text/javascript"></script>
@@ -91,6 +88,8 @@
     <script src="./js/D3/Checkbox.js" type="text/javascript"></script>
     <script src="./js/D3/Protein.js" type="text/javascript"></script>
     <script src="./js/D3/Diminished.js" type="text/javascript"></script>
+    <script src="./js/Save.js" type="text/javascript"></script>
+    <script src="./js/Load.js" type="text/javascript"></script>
     <script src="./js/main.js" type="text/javascript"></script>
     <script src="./js/Tooltip.js" type="text/javascript"></script>
     <script src="./js/rlimsp.js" type="text/javascript"></script>
@@ -106,27 +105,6 @@
 			</canvas>
 			<canvas id="overlayCanvas" width = '4000' height = '4000' style="position: absolute; margin: 0px; left: 0px; right: 0px; top: 50px; bottom: 0px; height: auto; width: auto; z-index: 1; display: block; visibility: visible; pointer-events: none;">
 			</canvas>
-			<!--
-			<div id="infoBox" title="Welcome to PathRings" style="display:none !important;">
-        <div class="main" >
-          PathRings is a web-based application of biological pathway visualization and analysis,
-          allowing users to visualize, search pathways from Reactome, to upload their own gene data for ortholog analysis
-          and to upload their gene expression data for expression analysis. This is a web-version of
-          <a href=" https://sites.google.com/a/umbc.edu/pathbubbles/" target="_blank"> <font color="red">PathBubbles
-							project</font>.</a> <br/>
-          Please press <font color="red" style="font-size: 16px">F/f</font> button on your keyboard to fullscreen.<br/>
-          Here is the <a href="./documents/PathRings_manual.pdf" target="_blank"><font color="red">Manual</font></a> for all the operation of data visualization and analysis.<br/>
-          Here is the sample <a href="./documents/Peroxisomal lipid metabolism.xml" target="_blank"><font color="red">XML data format</font></a> for pathway graph visualization.<br/>
-          Here is the sample <a href="./documents/customeOrtholog.txt" target="_blank"><font color="red">Otholog data</font></a> for otholog analysis between .<br/>
-          Here is the sample <a href="./documents/TGF0expression.txt" target="_blank"><font color="red">Expression gene data</font></a> for expression analysis.<br/>
-        </div>
-			</div>
-			-->
-
-			<div id="information" title="Information"  style="z-index:2000; ">
-        <iframe frameborder="0" marginwidth="0" marginheight="0" width="560px" height="500" style="overflow:hidden;" src="http://www.ncbi.nlm.nih.gov/gquery"></iframe>
-			</div>
-
 		</div>
 		<div >
 			<svg id="bgsvg" width = '4000' height = '4000' style="position: absolute; margin: 0px; left: 0px; right: 0px; top: 50px; bottom: 0px;

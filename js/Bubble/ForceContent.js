@@ -1,9 +1,9 @@
 (function($P){
 	'use strict';
 
-	$P.D3SplitForce = $P.defineClass(
+	$P.Bubble.ForceContent = $P.defineClass(
 		$P.HtmlObject,
-		function D3SplitForce(config) {
+		function  ForceBubbleContent(config) {
 			$P.HtmlObject.call(this, {
 				parent: '#bubble',
 				type: 'div',
@@ -13,14 +13,19 @@
 			this.svg = d3.select(this.element).append('svg').attr('class', 'svg');
 			this.svg.main = this.svg.append('g');
 
-			this.layout = new $P.PathwayForceLayout();
+			this.layout = config.layout || new $P.PathwayForceLayout();
 
 			this.layout.registerTickListener(this.onTick.bind(this));
 			this.layout.force.gravity(0);
 			this.layout.gravity = 0.03;
+
 			this.pathways = [];
+			if (config.pathways) {
+				this.setPathways(config.pathways);}
+
 
 			this.legendWidth = config.legendWidth || 130;
+			this.mode = config.mode || 'split';
 
 			this.updateSvgPosition();
 
@@ -31,8 +36,10 @@
 				if ('down' === this.expression[symbol]) {return 'cyan';}
 				return 'white';},
 
-			addPathway: function(pathway, mode) {
+			addPathway: function(pathway, mode, finish) {
 				var self = this;
+
+				if (undefined !== mode) {this.mode = mode;}
 
 				if (undefined === pathway.color) {
 					var colors = $P.BubbleBase.colors.slice(0), color, p;
@@ -56,24 +63,9 @@
 
 					pathway = $.extend({}, pathway, {type: 'pathway'});
 					self.pathways.push(pathway);
+					self.onPathwaysChanged();
+					if (finish) {finish();}}
 
-					if (self.svg) {self.svg.remove();}
-					self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
-					self.svg.main = self.svg.append('g').attr('id', 'main');
-					self.svg.defs = self.svg.append('defs');
-
-					self.layout.setPathways(self.pathways);
-					self.layout.force.start();
-					if ('split' === mode) {self.layoutSplit();}
-					else if ('soup' === mode) {self.layoutSoup();}
-					self.updateSvgPosition();
-					console.log(self.layout.force);
-					//self.layout.doTicks(10, {no_display: true});
-					// TODO: Auto zoom out?
-					//self.layout.getBoundingBox();
-					// expand each view out to see bounding box (circle, maybe?)
-					// Since they're linked we'll get the maximal view.
-				}
 				$P.getJSON(
 					'./php/get_entities.php',
 					function (jsonData) {
@@ -85,10 +77,38 @@
 							$.each(jsonData.reactions, function(reactionId, reaction) {
 								reaction.klass = 'reaction';
 								self.layout.addNode(reaction);});}
+						self.layout.positionNewNodes();
 						onFinish();},
 					{type: 'GET', data: {
 						mode: 'reactome_pathway_id',
 						id: pathway.pathwayId}});},
+
+			setPathways: function(pathways, finish) {
+				var self = this;
+				self.onPathwaysChanged = function(){}; // temp disable redisplay.
+
+				var index = 0;
+				function add() {
+					if (index < pathways.length) {
+						self.addPathway(pathways[index], undefined, add);
+						++index;}
+					else {
+						delete self.onPathwaysChanged;
+						self.onPathwaysChanged();
+						if (finish) {finish();}}}
+
+				add();},
+
+			onPathwaysChanged: function() {
+				var self = this;
+				if (self.svg) {self.svg.remove();}
+				self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
+				self.svg.main = self.svg.append('g').attr('id', 'main');
+				self.svg.defs = self.svg.append('defs');
+
+				self.layout.setPathways(self.pathways, function() {
+					self.renewDisplay();
+					self.updateSvgPosition();});},
 
 			getPathwayColor: function(pathway) {
 				var i;
@@ -97,6 +117,11 @@
 						return this.pathways[i].color;}}
 				return pathway.color || pathway.strokeStyle || null;},
 
+			renewDisplay: function() {
+				if ('split' === this.mode) {this.layoutSplit();}
+				else if ('soup' === this.mode) {this.layoutSoup();}
+			},
+
 			layoutPrep: function() {
 				if (this.display) {this.display.delete();}
 				if (this.display && this.display.viewCount > 0) {
@@ -104,7 +129,7 @@
 
 			layoutFinish: function() {
 				if (!this.display || !this.display.layout || !this.display.layout.force) {return;}
-				this.onTick(null, {origin: 'layoutUpdate'});
+				this.onTick();
 				this.updateLegend();},
 
 			layoutSplit: function() {
@@ -195,10 +220,8 @@
 			drawSelf: function(context, scale, args) {
 				$P.HtmlObject.prototype.drawSelf.call(this, context, scale, args);},
 
-			onTick: function(_, args) {
+			onTick: function() {
 				var self = this;
-				args = args || {};
-				if (args.no_display) {return;}
 
 				this.svg.selectAll('.node').attr('transform', function(d) {
 					return 'translate(' + d.x + ',' + d.y + ')';});
@@ -243,7 +266,24 @@
 							+ 'L' + p2.x + ' ' + p2.y
 							+ 'L' + p3.x + ' ' + p3.y
 							+ 'Z';
-					});}
+					});},
+
+			saveKeys: [
+				'legendWidth',
+				'pathways',
+				'layout'],
+
+			saveCallback: function(save, id) {
+				var self = this;
+				var result = {};
+				save.objects[id] = result;
+
+				result.legendWidth = save.save(self.legendWidth);
+				result.pathways = save.save(self.pathways);
+				result.layout = save.save(self.layout);
+				console.log('LAYOUT', result.layout);
+
+				return id;}
 
 		});
 

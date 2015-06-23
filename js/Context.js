@@ -25,6 +25,26 @@
 			 * @param {Function} callback - the mouseup callback.
 			 */
 			setGlobalMouseup: function(callback) {
-				window.onmouseup = callback;}
+				window.onmouseup = callback;},
+
+			saveKeys: [
+				'scrollX',
+				'hintsEnabled',
+				'linksEnabled',
+				'scene']
 		});
+
+	$P.Context.loader = function(load, id, data) {
+		load.objects[id] = $P.state;
+		$P.state.scrollX = data.scrollX;
+		$P.state.hintsEnabled = data.hintsEnabled;
+		$P.state.linksEnabled = data.linksEnabled;
+
+		$P.state.markDirty();
+		$P.state.navCanvas.viewbox.updatePosition();
+
+		load.loadObject(data.scene);
+
+		return $P.state;};
+
 })(PATHBUBBLES);

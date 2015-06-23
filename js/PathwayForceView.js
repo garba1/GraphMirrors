@@ -241,7 +241,7 @@
 									d3.event.preventDefault();})
 								.on('contextmenu', function() {
 									d3.event.preventDefault();
-									self.parentBubble.parent.add(new $P.IFrameBubble({
+									self.parentBubble.parent.add(new $P.Bubble.IFrame({
 										w: 1200,
 										h: 600,
 										url: 'http://research.bioinformatics.udel.edu/rlimsp/view.php?s=1225&abs=0#EvidenceView?pmid=' + d.id

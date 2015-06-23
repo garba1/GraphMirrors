@@ -155,14 +155,14 @@
 			addLink: function(link) {
 				$P.ForceLayout.prototype.addLink.call(this, link);
 				return link;},
-			setPathways: function(pathways) {
+			setPathways: function(pathways, finish) {
 				this.getNodes('entity').forEach(function(entity) {
 					var count = 0;
 					pathways.forEach(function(pathway) {
 						if (entity.pathways[pathway.pathwayId]) {++count;}});
 					entity.crosstalkCount = count;
-					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);
-				});},
+					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);});
+				if (finish) {finish();}},
 			consolidateComposite: function() {
 				var self = this;
 				self.getNodes('entity').forEach(function(entity) {
@@ -193,4 +193,16 @@
 					self.groupNodes(first, rest, false);});
 			}
 		});
+
+	$P.PathwayForceLayout.loader = function(load, id, data) {
+		var config = {};
+		config.size = load.loadObject(data.size);
+		config.nodes = load.loadObject(data.nodes);
+		config.links = load.loadObject(data.links);
+		config.shape = load.loadObject(data.shape);
+
+		var layout = new $P.PathwayForceLayout(config);
+
+		return layout;};
+
 })(PATHBUBBLES);

@@ -457,7 +457,7 @@
 							result = $P.state.scene.sendEvent(event);
 
 							if (!result) {
-								force = new $P.SplitForce({x: x, y: y, w: 750, h: 600});
+								force = new $P.Bubble.Force({x: x, y: y, w: 750, h: 600});
 								$P.state.scene.add(force);
 								result = force.receiveEvent(event);}
 
@@ -1655,29 +1655,13 @@
 					this.crosstalkLegend.select('#digit-end-mark').attr('x', 54.5 + value);
 					this.crosstalkLegend.select('#digit-end-label').attr('x', 51.5 + value);}},
 
-			getPersistData: function() {
-				var persist = {
-					defaultRadius: this.defaultRadius,
-					dataName: this.name,
-					dataType: this.dataType,
-					file: this.file,
-					customOrtholog: this.customOrtholog,
-					// Too many circular references for now.
-					//selectedData: this.selectedData,
-					customExpression: this.customExpression,
-					maxLevel: this.maxLevel,
-					crosstalkSymbols: this.crosstalkSymbols,
-					rateLimitSymbols: this.rateLimitSymbols,
-					highlightPathways: this.highlightPathways,
-					displayMode: this.displayMode,
-					localExpressionPercent: this.localExpressionPercent,
-					orthologFile: this.orthologFile,
-					expressionFile: this.expressionFile,
-					fisher: this.fisher,
-					nodeTextSize: this.nodeTextSize};
-				if (persist.selectedData) {
-					delete persist.selectedData.parent;}
-				return persist;},
+			saveKeys: [
+				'chickenGeneCount',
+				'legendWidth',
+				'zoomScale',
+				'zoomTranslate',
+				'customExpression',
+				'customOrtholog'],
 
 			getFisherColor: function(ratio) {
 				ratio = Math.min(ratio, 1 - 0.000000001);
