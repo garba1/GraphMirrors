@@ -63,7 +63,7 @@
 
 		});
 
-	$P.SoupForceView.makeLegend = function(parentSelection, width, height) {
-		return $P.PathwayForceView.makeLegend(parentSelection, width, height);};
+	$P.SoupForceView.makeLegend = function(parentSelection, width, height, callback) {
+		return $P.PathwayForceView.makeLegend(parentSelection, width, height, callback);};
 
 })(PATHBUBBLES);
