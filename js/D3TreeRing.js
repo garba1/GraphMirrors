@@ -469,7 +469,7 @@
 									fillStyle: result.addLink.color,
 									source: new $P.D3TreeRing.BubbleLinkEnd({
 										ring: self.parent,
-										datumId: d3.select(this).datum().dbId}),
+										datum: d3.select(this).datum()}),
 									target: new $P.BubbleLink.End({object: result.target})}));}
 
 							d3.select(this).attr('transform', null);
