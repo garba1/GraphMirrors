@@ -9,10 +9,10 @@
 
 			self.objects = {};
 
-			console.log(file);
 			var reader = new FileReader();
 			reader.onload = function() {
 				self.data = JSON.parse(reader.result);
+				console.log('LOAD', self.data);
 				var result = self.loadObject(self.data.root);
 				console.log(result);};
 			reader.readAsText(file);

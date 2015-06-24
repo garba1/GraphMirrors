@@ -38,8 +38,8 @@
 			set mode(value) {
 				if (value === this._mode) {return;}
 				this._mode = value;},
-			addNode: function(node) {
-				if (!$P.ForceLayout.prototype.addNode.call(this, node)) {return null;}
+			addNode: function(node, override) {
+				if (!$P.ForceLayout.prototype.addNode.call(this, node, override)) {return null;}
 				if ('entity' === node.klass) {this.onAddEntity(node);}
 				if ('reaction' === node.klass) {this.onAddReaction(node);}
 				if ('paper' === node.klass) {this.onAddPaper(node);}
@@ -64,7 +64,6 @@
 					name: entity.name,
 					id: entity.id,
 					klass: 'entitylabel',
-					x: 0, y: 0,
 					charge: 0});
 				if (node) {
 					this.addLink({
@@ -85,8 +84,7 @@
 							entities: [],
 							color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
 							gravityMultiplier: 3,
-							charge: -120,
-							x: 0, y: 0};
+							charge: -120};
 						this.addNode(node);
 					}
 
@@ -137,8 +135,7 @@
 								id: paper_id,
 								klass: 'paper',
 								charge: -50,
-								reactions: [reaction],
-								x: 0, y: 0};
+								reactions: [reaction]};
 							self.addNode(node);}
 						else {
 							node.reactions.push(reaction);}
@@ -152,9 +149,6 @@
 						self.addLink(link);
 					});}
 			},
-			addLink: function(link) {
-				$P.ForceLayout.prototype.addLink.call(this, link);
-				return link;},
 			setPathways: function(pathways, finish) {
 				this.getNodes('entity').forEach(function(entity) {
 					var count = 0;

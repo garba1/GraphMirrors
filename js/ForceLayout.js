@@ -16,8 +16,8 @@
 			this.force.on('tick', this.onTick.bind(this));
 			this.nodeAddTriggers = {};
 			this.linkAddTriggers = {};
-			if (config.nodes) {this.addNodes(config.nodes);}
-			if (config.links) {this.addLinks(config.links);}
+			if (config.nodes) {this.addNodes(config.nodes, true);}
+			if (config.links) {this.addLinks(config.links, true);}
 			this.tickListeners = config.tickListeners || [];
 			this.changeListeners = config.changeListeners || [];
 			this.unpositionedNodes = false;
@@ -43,13 +43,23 @@
 				if (value === this._size) {return;}
 				this._size = value;
 				this.force.size(value);},
-			addNode: function(node) {
+			get: function(type, id) {
+				if ('node' === type) {return this.getNode(id);}
+				if ('link' === type) {return this.getLink(id);}
+				return null;},
+			add: function(element, override) {
+				if ('node' === element.layoutType) {return this.addNode(element, override);}
+				if ('link' === element.layoutType) {return this.addLink(element, override);}
+				return null;},
+			addNode: function(node, override) {
 				node.layoutId = node.layoutId || ((node.klass || '') + ':' + (node.id || node.name || ''));
 				if (this.nodeData.indexed[node.layoutId]) {
-					console.log('EXISISTS', this.nodeData.indexed[node.layoutId]);
+					if (override) {
+						this.updateElement(node);}
 					return null;}
 				this.unpositionedNodes = true;
 				node.links = [];
+				node.layoutType = 'node';
 				this.nodes.push(node);
 				this.nodeData.indexed[node.layoutId] = node;
 				if (node.klass) {
@@ -59,8 +69,38 @@
 					this.nodeAddTriggers[node.layoutId].forEach(function(callback) {callback(node);});
 					delete this.nodeAddTriggers[node.layoutId];}
 				return node;},
+			updateElement: function(element) {
+				var self = this;
+				var original = self.get(element.layoutType, element.layoutId);
+				if (original === element) {return;}
+
+				function update(target, key, value) {
+					if (Array.isArray(value)) {
+						target[key] = [];
+						value.forEach(function(subvalue, i) {
+							update(target[key], i, subvalue);});}
+					else if (value && 'object' === typeof value) {
+						if (value.layoutType && value.layoutId) {
+							var existing = self.get(value.layoutType, value.layoutId);
+							if (existing) {
+								value = existing;}
+							else {
+								self.add(value);}
+							target[key] = value;}
+						else {
+							target[key] = {};
+							$.each(value, function(subkey, subvalue) {
+								update(target[key], subkey, subvalue);});}}
+					else {
+						target[key] = value;}}
+
+				$.each(element, function(key, value) {
+					update(original, key, value);});},
 			getNode: function(layoutId) {return this.nodeData.indexed[layoutId];},
-			addNodes: function(nodes) {nodes.forEach(this.addNode.bind(this));},
+			addNodes: function(nodes, override) {
+				var self = this;
+				nodes.forEach(
+					function(node) {self.addNode(node, override);});},
 			getNodes: function(klass) {
 				if (klass) {
 					var list = this.nodeData[klass];
@@ -128,10 +168,14 @@
 					$P.removeFromList(link.target.links, link);
 					link.target = target;
 					target.links.push(link);}},
-			addLink: function(link) {
+			addLink: function(link, override) {
 				if (!link.source || !link.target) {console.error('Illegal Link');}
-				if (this.linkData.indexed[link.id]) {return false;}
 				link.layoutId = link.layoutId || ((link.klass || '') + ':' + (link.id || link.name || ''));
+				link.layoutType = 'link';
+				if (this.linkData.indexed[link.layoutId]) {
+					if (override) {
+						this.updateElement(link);}
+					return null;}
 				this.links.push(link);
 				this.linkData.indexed[link.layoutId] = link;
 				if (link.klass) {
@@ -162,7 +206,10 @@
 						$P.removeFromList(node.links, link);});}
 			},
 			getLink: function(layoutId) {return this.linkData.indexed[layoutId];},
-			addLinks: function(links) {links.forEach(this.addLink.bind(this));},
+			addLinks: function(links, override) {
+				var self = this;
+				links.forEach(
+					function(link) {self.addLink(link, override);});},
 			getLinks: function(klass) {
 				var links;
 				if (klass) {
