@@ -97,7 +97,10 @@
 				result.layout = save.save(this.layout);
 				result.shape = save.save(this.shape);
 				result.viewConstructor = this.viewConstructor.name;
-				return id;}
+				return id;},
+
+			getZoomBase: function() {
+				return this.views.length > 0 && this.views[0].zoom.base;}
 		});
 
 	$P.ForceDisplay.loader = function(load, id, data) {

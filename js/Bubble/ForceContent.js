@@ -19,10 +19,14 @@
 			this.layout.force.gravity(0);
 			this.layout.gravity = 0.03;
 
+			if (config.translate || config.scale) {
+				this.zoomBase = {
+					translate: function() {return config.translate || [0, 0];},
+					scale: function() {return config.scale || 1;}};}
+
 			this.pathways = [];
 			if (config.pathways) {
 				this.setPathways(config.pathways);}
-
 
 			this.legendWidth = config.legendWidth || 130;
 			this.mode = config.mode || 'split';
@@ -125,7 +129,7 @@
 			layoutPrep: function() {
 				if (this.display) {this.display.delete();}
 				if (this.display && this.display.viewCount > 0) {
-					this.zoomBase = this.display.views[0].zoom.base;}},
+					this.zoomBase = this.display.getZoomBase();}},
 
 			layoutFinish: function() {
 				if (!this.display || !this.display.layout || !this.display.layout.force) {return;}
@@ -281,7 +285,11 @@
 				result.legendWidth = save.save(self.legendWidth);
 				result.pathways = save.save(self.pathways);
 				result.layout = save.save(self.layout);
-				console.log('LAYOUT', result.layout);
+
+				var zoomBase = this.display && this.display.getZoomBase();
+				if (zoomBase) {
+					result.translate = zoomBase.translate();
+					result.scale = zoomBase.scale();}
 
 				return id;}
 
