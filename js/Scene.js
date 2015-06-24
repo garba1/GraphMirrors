@@ -212,8 +212,8 @@
 					return child.findChild(predicate);});},
 
 			saveKeys: [
-				'children'
-				//,'links'
+				'children',
+				'links'
 			],
 
 			getPersistObject: function() {
@@ -242,9 +242,8 @@
 		load.objects[id] = $P.state.scene;
 
 		$P.state.scene.deleteAll();
-		console.log(data.children);
 		$P.state.scene.children = load.loadObject(data.children);
-		//$P.state.scene.links = load.loadObject(data.links);
+		$P.state.scene.links = load.loadObject(data.links);
 
 		return $P.state.scene;};
 

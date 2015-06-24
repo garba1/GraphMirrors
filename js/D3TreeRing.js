@@ -41,6 +41,7 @@
 			this.nodeTextSize = config.nodeTextSize || 10;
 			this.barLength = 60;
 			this.legendWidth = 140;
+			this.ringLoadListeners = [];
 			this.color = {
 				crosstalkExponent: '#f44',
 				crosstalkDigit: '#fca',
@@ -468,7 +469,7 @@
 									fillStyle: result.addLink.color,
 									source: new $P.D3TreeRing.BubbleLinkEnd({
 										ring: self.parent,
-										datum: d3.select(this).datum()}),
+										datumId: d3.select(this).datum().dbId}),
 									target: new $P.BubbleLink.End({object: result.target})}));}
 
 							d3.select(this).attr('transform', null);
@@ -524,7 +525,11 @@
 							$P.getJSON(_this.file, function (root, error) {
 								var node, count, minRatio, maxRatio, progress;
 								nodeData = partition.nodes(root);
+
 								self.nodes = nodeData;
+
+								self.nodes.forEach(function(node, index) {
+									node.layoutIndex = index;});
 
 								nodeData.forEach(function(pathway) {
 									if (!pathway.symbols) {pathway.symbols = [];}
@@ -759,7 +764,8 @@
 										.attr('id', function (d, i) {return 'group' + i;})
 										.attr('class', 'pathway-arc')
 										.attr('d', arc)
-										.each(function(d) {this.__data__ = d;})
+										.each(function(d) {
+											this.__data__ = d;})
 										.style('fill', function (d, i) {
 											if (i == 0)
 												return '#fff';
@@ -1459,6 +1465,10 @@
 									}
 								});
 
+								if (self.ringLoadListeners) {
+									self.ringLoadListeners.forEach(function(f) {f();});
+									self.ringLoadListeners = [];}
+
 								finish();}
 
 							function addLegends() {
@@ -1682,12 +1692,21 @@
 	$P.D3TreeRing.BubbleLinkEnd = $P.defineClass(
 		$P.BubbleLink.End,
 		function D3TreeRingBubbleLinkEnd(config) {
-			this.ring = config.ring;
-			this.datum = config.datum;
+			var self = this;
+			self.ring = config.ring;
+			if (config.datum) {self.datum = config.datum;}
+			else if (config.datumIndex) {
+				if (self.ring.svg.nodes) {
+					self.datum = self.ring.svg.nodes[config.datumIndex];}
+				else {
+					self.ring.svg.ringLoadListeners.push(function() {
+						self.datum = self.ring.svg.nodes[config.datumIndex];
+						$P.state.markDirty();});}}
 			$P.BubbleLink.End.call(this, {object: this.ring});
 		},
 		{
 			get x() {
+				if (!this.datum) {return undefined;}
 				var box = this.ring.svg,
 						limits = this.ring.getInteriorDimensions(),
 						x = box.centerX + (box.zoomTranslate ? box.zoomTranslate[0]: 0)
@@ -1696,14 +1715,30 @@
 				if (x > limits.x + limits.w) {x = limits.x + limits.w;}
 				return x;},
 			get y() {
+				if (!this.datum) {return undefined;}
 				var box = this.ring.svg,
 						limits = this.ring.getInteriorDimensions(),
 						y = box.centerY + (box.zoomTranslate ? box.zoomTranslate[1] : 0)
 							+ this.datum.outsideEdge.y * box.zoomScale;
 				if (y < limits.y) {y = limits.y;}
 				if (y > limits.y + limits.h) {y = limits.y + limits.h;}
-				return y;}
+				return y;},
+			saveKeys: ['ring', 'datumIndex'],
+			saveCallback: function(save, id) {
+				var result = {};
+				save.objects[id] = result;
+				result.ring = save.save(this.ring);
+				result.datumIndex = save.save(this.datum.layoutIndex);
+				return id;}
 		});
+
+	$P.D3TreeRing.BubbleLinkEnd.loader = function(load, id, data) {
+		var config = {};
+		$P.D3TreeRing.BubbleLinkEnd.prototype.saveKeys.forEach(function(key) {
+			config[key] = load.loadObject(data[key]);});
+
+		var end = new $P.D3TreeRing.BubbleLinkEnd(config);
+	return end;};
 
 	// old name
 	$P.D3Ring = $P.D3TreeRing;

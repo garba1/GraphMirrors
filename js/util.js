@@ -267,7 +267,10 @@ $P.asyncOrdered = function(callbacks) {
 	 */
 	$P.indexBy = function(list, f) {
 		var map = {};
-		list.forEach(function(element) {map[f(element)] = element;});
+		list.forEach(function(element) {
+			var key = f(element);
+			if (map[key]) {console.error('EXISTING KEY', map[key], element);}
+			map[key] = element;});
 		return map;};
 
 	// Creates a list from an object's values.

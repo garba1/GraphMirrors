@@ -61,8 +61,24 @@ $P.BubbleLink = $P.defineClass(
 			$P.removeFromList(this.source.object.links, this);
 			$P.removeFromList(this.target.object.links, this);
 			$P.removeFromList($P.state.scene.links, this);
-			$P.state.markDirty();}
+			$P.state.markDirty();},
+
+		saveKeys: [
+			'source', 'target',
+			'strokeStyle', 'fillStyle', 'opacity',
+			'sourceWidth', 'targetWidth']
+
 	});
+
+$P.BubbleLink.loader = function(load, id, data) {
+	var config = {};
+	$P.BubbleLink.prototype.saveKeys.forEach(function(key) {
+		config[key] = load.loadObject(data[key]);});
+
+	var link = new $P.BubbleLink(config);
+	load.objects[id] = link;
+	$P.state.scene.addLink(link);
+	return link;};
 
 $P.BubbleLink.End = $P.defineClass(
 	null,
@@ -72,5 +88,14 @@ $P.BubbleLink.End = $P.defineClass(
 		get x() {return this.object.x;},
 		get y() {return this.object.y;},
 		registerLink: function(link) {
-			this.object.links.push(link);}
+			this.object.links.push(link);},
+		saveKeys: ['object']
 	});
+
+$P.BubbleLink.End.loader = function(load, id, data) {
+	var config = {};
+	$P.BubbleLink.End.prototype.saveKeys.forEach(function(key) {
+		config[key] = load.loadObject(data[key]);});
+
+	var end = new $P.BubbleLink.End(config);
+	return end;};
