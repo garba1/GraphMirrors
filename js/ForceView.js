@@ -16,6 +16,7 @@
 
 			self.parent = config.parent || self.svg;
 			self.parentBubble = config.parentBubble || null;
+			self.display = config.display || null;
 
 			self.layout = config.layout;
 			if (!self.layout) {

@@ -1,0 +1,59 @@
+(function($P) {
+	'use strict';
+
+	$P.Bubble.Note = $P.defineClass(
+		$P.Bubble,
+		function NoteBubble(config) {
+			config = $.extend(config, {
+				closeMenu: true,
+				groupMenu: true});
+			$P.Bubble.call(this, config);
+			if (undefined !== config.text) {this.text = config.text;}},
+		{
+			get text() {return this.content && $(this.content.element).val();},
+			set text(value) {
+				if (this.content) {
+					$(this.content.element).val(value);}
+				else {
+					this._readyText = value;}},
+
+			onAdded: function(parent) {
+				if ($P.BubbleBase.prototype.onAdded.call(this, parent) || this.content) {return;}
+				var config = {};
+				config = $.extend(config, this.getInteriorDimensions());
+				config.x += 8;
+				config.y += 8;
+				config.w -= 16;
+				config.h -= 16;
+				config.parent = this;
+				config.url = this.url;
+				this.content = new $P.Bubble.Note.Content(config);
+				if (this._readyText) {
+					this.text = this._readyText;
+					delete this._readyText;}},
+
+			saveKeys: [].concat($P.Bubble.prototype.saveKeys, ['text'])
+
+		});
+
+	$P.Bubble.Note.Content = $P.defineClass(
+		$P.HtmlObject,
+		function NoteBubbleContent(config) {
+			$P.HtmlObject.call(this, {
+				parent: '#bubble',
+				before: '#overlayCanvas',
+				type: 'textarea',
+				pointer: 'all',
+				objectConfig: config});},
+		{});
+
+	$P.Bubble.Note.loader = function(load, id, data) {
+		var config = {};
+		$P.Bubble.Note.prototype.saveKeys.forEach(function(key) {
+			config[key] = load.loadObject(data[key]);});
+		var bubble = new $P.Bubble.Note(config);
+		load.objects[id] = bubble;
+
+		return bubble;};
+
+})(PATHBUBBLES);

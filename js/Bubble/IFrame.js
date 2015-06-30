@@ -2,7 +2,7 @@
 	'use strict';
 
 	$P.Bubble.IFrame = $P.defineClass(
-		$P.BubbleBase,
+		$P.Bubble,
 		function IFrameBubble(config) {
 			config = $.extend(config, {
 				closeMenu: true,

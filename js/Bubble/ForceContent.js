@@ -15,7 +15,7 @@
 
 			this.layout = config.layout || new $P.PathwayForceLayout();
 
-			this.layout.registerTickListener(this.onTick.bind(this));
+			this.layout.registerDisplayListener(this.onTick.bind(this));
 			this.layout.force.gravity(0);
 			this.layout.gravity = 0.03;
 
@@ -152,6 +152,7 @@
 					shape: new $P.ForceShape.Centered({w: this.w, h: this.h, count: 1}),
 					zoomBase: this.zoomBase,
 					viewArgs: this.pathways,
+					collapsedLocations: this.display && this.display.collapsedLocations,
 					viewConstructor: $P.PathwayForceView});},
 
 			layoutMirror: function() {
@@ -163,6 +164,7 @@
 					shape: new $P.ForceShape.Mirror({w: this.w * 0.5, h: this.h, count: 2}),
 					zoomBase: this.zoomBase,
 					viewArgs: this.pathways,
+					collapsedLocations: this.display && this.display.collapsedLocations,
 					viewConstructor: $P.PathwayForceView});},
 
 			layoutRadial: function() {
@@ -176,6 +178,7 @@
 						radius: Math.max(this.w, this.h)}),
 					zoomBase: this.zoomBase,
 					viewArgs: this.pathways,
+					collapsedLocations: this.display && this.display.collapsedLocations,
 					viewConstructor: $P.PathwayForceView});},
 
 			layoutSoup: function() {
@@ -188,6 +191,7 @@
 					shape: new $P.ForceShape.Centered({w: this.w, h: this.h, count: 1}),
 					zoomBase: this.zoomBase,
 					viewArgs: [{type: 'pathways', list: this.pathways}],
+					collapsedLocations: this.display && this.display.collapsedLocations,
 					viewConstructor: $P.SoupForceView});
 				this.layoutFinish();},
 
@@ -202,12 +206,12 @@
 
 				self.legend = self.display.viewConstructor.makeLegend(
 					d3.select(self.element), self.legendWidth, self.h,
-					function(id, state) {self.setVisibleFilter(id, state);});
+					function(id, state) {self.setNodeTypeHidden(id, !state);});
 			},
 
-			setVisibleFilter: function(id, state) {
+			setNodeTypeHidden: function(nodeType, hidden) {
 				this.display.views.forEach(function(view) {
-					view.setVisibleFilter(id, state);});},
+					view.setNodeTypeHidden(nodeType, hidden);});},
 
 			updateSvgPosition: function() {
 				if (this.svg) {
@@ -242,35 +246,11 @@
 					.attr('x2', function(link) {return link.target.x;})
 					.attr('y2', function(link) {return link.target.y;});
 
-				// Pathway edge links
-				this.svg.selectAll('.link .pathway-edge')
-					.attr('x1', function(link) {return link.source.x;})
-					.attr('y1', function(link) {return link.source.y;})
-					.attr('x2', function(link) {return link.target.x;})
-					.attr('y2', function(link) {return link.target.y;});
-
-				// Directed Links.
-				this.svg.selectAll('.link path')
-					.attr('d', function(link) {
-						var element = d3.select(this),
-								dir = $P.Vector2D(link.target.x - link.source.x, link.target.y - link.source.y).normalized(),
-								cross = dir.rotate90(),
-								sourceVec = $P.Vector2D(link.source.x, link.source.y),
-								targetVec = $P.Vector2D(link.target.x, link.target.y),
-								sourceWidth = parseFloat(element.attr('source-width')),
-								targetWidth = parseFloat(element.attr('target-width')),
-								sourceWidthVec = cross.times(sourceWidth * 0.5),
-								targetWidthVec = cross.times(targetWidth * 0.5),
-								p0 = sourceVec.minus(sourceWidthVec),
-								p1 = sourceVec.plus(sourceWidthVec),
-								p2 = targetVec.plus(targetWidthVec),
-								p3 = targetVec.minus(targetWidthVec);
-						return 'M' + p0.x + ' ' + p0.y
-							+ 'L' + p1.x + ' ' + p1.y
-							+ 'L' + p2.x + ' ' + p2.y
-							+ 'L' + p3.x + ' ' + p3.y
-							+ 'Z';
-					});},
+				this.svg.selectAll('.update-displays').each(function(d, i) {
+					if (d.displays) {
+						d.displays.forEach(function(display) {
+							display.update(self.layout);});}});
+			},
 
 			saveKeys: [
 				'legendWidth',

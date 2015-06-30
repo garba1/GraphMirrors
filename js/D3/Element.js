@@ -6,9 +6,10 @@
 		null,
 		function D3Element(config) {
 			this.selection = d3.select(config.parent).append(config.elementType);
+			this.selection.classed('update-displays', true);
 		},
 		{
-
+			update: function() {}
 		});
 
 	$P.D3.Element.appender = function(constructor, config, callback) {
@@ -19,7 +20,7 @@
 				config = {};}
 
 			config.parent = this;
-			config.datum = d;
+			config.datum = d || {};
 			config.index = i;
 
 			var object = new constructor(config);

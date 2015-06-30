@@ -81,6 +81,9 @@
 					else if ('force' === key) {
 						bubble = new $P.Bubble.Force({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 750, h: 600});
 						$P.state.scene.add(bubble);}
+					else if ('note' === key) {
+						bubble = new $P.Bubble.Note({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 300});
+						$P.state.scene.add(bubble);}
 					else if (key === 'Delete_All') {
 						if (window.confirm('Delete all bubbles?')) {
 							$P.state.scene.deleteAll();}}
@@ -98,6 +101,7 @@
 					'help': {name: 'Open Manual'},
 					'treering': {name: 'Open Entire Pathway'},
 					'force': {name: 'Open Force Bubble'},
+					note: {name: 'Open Note Bubble'},
 					save: {name: 'Save'},
 					load: {name: 'Load'},
 					record: {name: 'Start Recording'},

@@ -155,7 +155,7 @@
 					pathways.forEach(function(pathway) {
 						if (entity.pathways[pathway.pathwayId]) {++count;}});
 					entity.crosstalkCount = count;
-					entity.gravityMultiplier = Math.max(1, (count - 1) * 5);});
+					entity.gravityMultiplier = Math.max(1, (count - 1) * 50);});
 				if (finish) {finish();}},
 			consolidateComposite: function() {
 				var self = this;
@@ -185,8 +185,31 @@
 					var first = reactions.splice(0, 1)[0],
 							rest = reactions.map($P.getter('layoutId'));
 					self.groupNodes(first, rest, false);});
-			}
-		});
+			},
+
+			getAdjacentNodes: function(node, jumps) {
+				var self = this;
+				var data = {};
+
+				function f(node, jumpsLeft) {
+					if (undefined !== data[node.layoutId] && jumpsLeft <= data[node.layoutId]) {return;}
+
+					data[node.layoutId] = jumpsLeft;
+
+					if (jumpsLeft <= 0) {return;}
+
+					if ('entity' === node.klass) {
+						node.reactions.forEach(function(reaction) {
+							f(reaction, jumpsLeft - 1);});}
+
+					else if ('reaction' === node.klass) {
+						Object.keys(node.entities).forEach(function(entityId) {
+							f(self.getNode('entity:' + entityId), jumpsLeft - 1);});}
+				}
+
+				f(node, jumps);
+
+				return data;}});
 
 	$P.PathwayForceLayout.loader = function(load, id, data) {
 		var config = {};

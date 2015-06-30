@@ -10,7 +10,9 @@
 
 			$P.ForceView.call(self, config);
 
-			self.visibleFilters = {};
+			self.hiddenNodeTypes = {};
+			self.highlights = {};
+
 			self.textTransform = self.shape.textTransform(self);
 
 			if (config.displayArgument) {
@@ -117,17 +119,24 @@
 
 			self.drawBackground = self.element.append('g').attr('class', 'layer').attr('pointer-events', 'none');
 
+			function elementLayoutId(element) {return element.__data__.layoutId;}
+
 			self.links = self.element.selectAll('.link').data(self.visibleLinks)
 				.enter().append('g').attr('class', 'link');
 			self.nodes = self.element.selectAll('.node').data(self.visibleNodes)
 				.enter().append('g').attr('class', 'node');
+			self.nodes.indexed = $P.indexBy(self.nodes[0], elementLayoutId);
+			self.links.indexed = $P.indexBy(self.links, $P.getter('layoutId'));
 			self.nodes.call(self.layout.drag);
 
 			self.locations = self.nodes.filter(function(d, i) {return 'location' === d.klass;});
+			self.locations.indexed = $P.indexBy(self.locations[0], elementLayoutId);
 			self.locations.append('circle')
 				.attr('stroke', 'black')
 				.attr('fill', $P.getter('color'))
 				.attr('r', 40)
+				.on('dblclick', function(d) {
+					self.setLocationCollapse(d, !self.display.collapsedLocations[d.id]);})
 				.append('title').text(function(d) {return d.name;});
 			self.locations.append('text')
 				.style('font-size', '15px')
@@ -138,17 +147,8 @@
 			self.reactionLinks = self.links.filter(
 				function(d, i) {return 'reaction:entity' === d.klass;});
 			self.linkBackgrounds();
-			// For some weird reason the stroke is being displayed as
-			// white-ish, even though it's set to these values at the time
-			// of display. As a temporary fix make opacity and width 0.
-			self.reactionLinks.append('path')
-				.attr('stroke', 'black')
-				.attr('stroke-width', 0)
-				.attr('stroke-opacity', 0)
-				.attr('fill', 'black')
-				.attr('source-width', 5)
-				.attr('target-width', 1)
-				.attr('opacity', 0.3);
+			self.makeReactionLinks();
+
 			/*
 			self.componentLinks = self.links.filter(
 				function(d, i) {return 'entity:component' === d.klass;});
@@ -289,11 +289,10 @@
 			self.reactions = self.nodes.filter(function(d, i) {return 'reaction' === d.klass;});
 			self.reactions.standard = self.reactions.filter(function(d, i) {return 'standard' === d.type;});
 			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.type;});
-			self.reactions.standard.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', 'red')
-				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
-				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
+			self.reactions.standard
+				.each($P.D3.Reaction.appender({
+					size: nodeSize(14)}))
+				.selectAll('.reaction')
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {
 					$P.state.scene.record({
@@ -304,11 +303,11 @@
 						source: self.parentBubble});
 					console.log(d);})
 				.append('title').text(nodeTitle);
-			self.reactions.phosphorylated.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', 'blue')
-				.attr('width', nodeSize(5)).attr('height', nodeSize(5))
-				.attr('x', nodeSize(-2.5)).attr('y', nodeSize(-2.5))
+			self.reactions.phosphorylated
+				.each($P.D3.Reaction.appender({
+					size: nodeSize(14),
+					fill: 'blue'}))
+				.selectAll('.reaction')
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {
 					$P.state.scene.record({
@@ -572,7 +571,41 @@
 				.attr('dominant-baseline', 'middle')
 				.attr('opacity', 1.0)
 				.text(self.nameLabel);
-		},
+
+			// build selections of all follower nodes for a given node.s
+			self.followerNodes = self.element.selectAll('.follower');
+			/*
+			self.followerNodes.indexed = {};
+			self.followerNodes.each(function(d, i) {
+				var follow = d3.select(this).attr('follow-id');
+				self.followerNodes.indexed[follow] = self.followerNodes.indexed[follow] || [];
+				self.followerNodes.indexed[follow].push(this);});
+			$.each(self.followerNodes.indexed, function(key, value) {
+				self.followerNodes.indexed[key] = d3.selectAll(value);});
+			 */
+
+
+			// Highlighting
+			function highlight(d, i) {
+				self.highlights = self.layout.getAdjacentNodes(d, 3);
+				self.updateNodes(self.nodes);
+				self.updateLinks(self.links);
+				self.layout.updateDisplay();}
+			function unhighlight(d, i) {
+				self.highlights = {};
+				self.updateNodes(self.nodes);
+				self.updateLinks(self.links);
+				self.layout.updateDisplay();}
+
+			self.reactions //.selectAll('*')
+				.on('mouseover', highlight)
+				.on('mouseout', unhighlight);
+			self.entities //.selectAll('*')
+				.on('mouseover', highlight)
+				.on('mouseout', unhighlight);
+
+			self.updateNodes(self.nodes);
+			self.updateLinks(self.links);},
 		{
 			inPathway: function(node) {
 				if (!this.pathway && !this.pathways) {return true;}
@@ -619,8 +652,8 @@
 
 			getExpressionColor: function(node) {
 				var expression = this.getExpression(node);
-				if ('up' === expression) {return '#CCCC00';}
-				if ('down' === expression) {return '#0000CC';}
+				if ('up' === expression) {return '#f00';}
+				if ('down' === expression) {return '#0f0';}
 				return 'white';},
 			onShapeChange: function() {
 				$P.ForceView.prototype.onShapeChange.call(this);
@@ -645,18 +678,27 @@
 
 			linkBackgrounds: function() {},
 
-			entityBackgrounds: function() {
-				this.entities.proteins.crosstalking
-					.append('rect')
-					.attr('stroke', 'black')
-					.attr('fill', 'gray')
-					.attr('transform', this.textTransform)
-					.attr('width', this.nodeSize(14)).attr('height', this.nodeSize(8))
-					.attr('x', this.nodeSize(-7)).attr('y', this.nodeSize(-5))
-					.attr('rx', this.nodeSize(3)).attr('ry', this.nodeSize(3));},
+			entityBackgrounds: function() {},
 
-			isNodeVisible: function(node) {
-				var key;
+			makeReactionLinks: function() {
+				this.reactionLinks.each($P.D3.ReactionLink.appender());},
+
+			isNodeVisible: function(node, element) {
+				var self = this,
+						selection, follow, key;
+
+				if (element) {
+					selection = d3.select(element);
+					node = node || selection.datum();
+					follow = selection.attr('follow-id');
+					if (follow) {
+						return self.isNodeVisible(self.layout.getNode(follow));}}
+
+				if ('entitylabel' === node.klass) {
+					return self.isNodeVisible(self.layout.getNode('entity:' + node.id));}
+
+				if (self.display.collapsedLocations[node.location]) {return false;}
+
 				if ('location' === node.klass) {key = 'location';}
 				else if ('reaction' === node.klass) {key = 'reaction';}
 				else if ('paper' === node.klass) {key = 'paper';}
@@ -665,57 +707,109 @@
 				else if (-1 !== ['SmallMolecule','Rna','Dna'].indexOf(node.type)) {key = 'small';}
 				else if ('Complex' === node.type) {key = 'complex';}
 				else if ('entity' === node.klass) {key = 'other';}
-				var result = this.visibleFilters[key];
-				if (undefined === result) {result = true;}
-				return result;},
 
-			setVisibleFilter: function(id, state) {
+				if (self.hiddenNodeTypes[key]) {return false;}
+
+				return true;},
+
+			updateNodes: function(selection) {
 				var self = this;
-				self.visibleFilters[id] = state;
 
-				function updateLinks(linkSelection) {
-					linkSelection
-						.style('display', function(d, i) {
-							if (d.source && self.isNodeVisible(d.source)
-									&& d.target && self.isNodeVisible(d.target)) {
-								return '';}
-							return 'none';});}
+				selection.style('display', function(d, i) {
+					return self.isNodeVisible(d, this) ? '' : 'none';});
 
-				function updateLabels() {
-					self.entityLabels
-						.style('display', function(d, i) {
-							return self.isNodeVisible(self.layout.getNode('entity:' + d.id))
-								? '' : 'none';});}
+				selection.each(function(d, i) {
+					if (!d) {return;}
 
-				if ('paper' === id) {
-					self.papers.style('display', state ? '' : 'none');
-					updateLinks(self.paperLinks);}
+					var selection = d3.select(this);
+
+					if ('entity' === d.klass || 'reaction' === d.klass) {
+						var highlights = self.highlights[d.layoutId];
+						d.highlighted = highlights + 1;
+						if (d.displays) {
+							d.displays.forEach(function(display) {
+								display.highlighted = highlights + 1;});}}
+
+					if ('location' === d.klass) {
+						selection.attr('stroke-width', self.display.collapsedLocations[d.id] ? 5 : 1);}});},
+
+			updateLinks: function(selection) {
+				var self = this;
+
+				selection.style('display', function(d, i) {
+					function visible(node) {
+						return node && (
+							self.isNodeVisible(node)
+								|| (node.locationCollapsed && 'reaction:entity' === d.klass));}
+					return (visible(d.source) && visible(d.target)) ? '' : 'none';});
+
+				selection.each(function(d, i) {
+					var selection = d3.select(this);
+
+					var highlighted =
+								d.source.highlighted && d.target.highlighted
+								&& Math.min(d.source.highlighted, d.target.highlighted);
+					d.highlighted = highlighted;
+
+					if (d.displays) {
+						d.displays.forEach(function(display) {
+							display.highlighted = highlighted + 1;});}});
+			},
+
+			setLocationCollapse: function(location, collapsed) {
+				var self = this,
+						locationNode;
+
+				if (self.display.collapsedLocations[location.id] == collapsed) {return;}
+				self.display.collapsedLocations[location.id] = collapsed;
+
+				locationNode = self.locations.indexed[location.layoutId];
+				self.updateNodes(d3.select(locationNode));
+
+				location.links.forEach(function(link) {
+					link.source.locationCollapsed = collapsed;
+					var node = self.nodes.indexed[link.source.layoutId];
+					self.updateNodes(d3.select(node));});
+
+				self.updateNodes(self.entityLabels);
+				self.updateLinks(self.reactionLinks);
+				self.updateLinks(self.entityLabelLinks);
+				self.updateLinks(self.locationLinks);
+				self.updateNodes(self.followerNodes);
+
+				self.layout.updateDisplay();},
+
+			setNodeTypeHidden: function(nodeType, hidden) {
+				var self = this,
+						updateNode, updateLink;
+
+				if (self.hiddenNodeTypes[nodeType] == hidden) {return;}
+				self.hiddenNodeTypes[nodeType] = hidden;
+
+				if ('paper' === nodeType) {
+					self.updateNodes(self.papers);
+					self.updateLinks(self.paperLinks);}
+				else if ('reaction' === nodeType) {
+					self.updateNodes(self.reactions);
+					self.updateLinks(self.paperLinks);
+					self.updateLinks(self.reactionLinks);}
 				else {
-					if ('diminished' === id) {
-						self.entities.diminished.style('display', state ? '' : 'none');}
-					if ('protein' === id) {
-						self.entities.proteins.style('display', state ? '' : 'none');}
-					if ('small' === id) {
-						self.entities.small.style('display', state ? '' : 'none');}
-					if ('complex' === id) {
-						self.entities.complex.style('display', state ? '' : 'none');}
-					if ('other' === id) {
-						self.entities.other.style('display', state ? '' : 'none');}
-					if ('reaction' === id) {
-						self.reactions.style('display', state ? '' : 'none');
-						updateLinks(self.paperLinks);}
-					updateLabels();
-					updateLinks(self.reactionLinks);
-					updateLinks(self.entityLabelLinks);}
-				updateLinks(self.locationLinks);
+					if ('diminished' === nodeType) {
+						self.updateNodes(self.entities.diminished);}
+					else if ('protein' === nodeType) {
+						self.updateNodes(self.entities.proteins);}
+					else if ('small' === nodeType) {
+						self.updateNodes(self.entities.small);}
+					else if ('complex' === nodeType) {
+						self.updateNodes(self.entities.complex);}
+					else if ('other' === nodeType) {
+						self.updateNodes(self.entities.other);}
+					self.updateNodes(self.entityLabels);
+					self.updateLinks(self.reactionLinks);
+					self.updateLinks(self.entityLabelLinks);
+					self.updateLinks(self.locationLinks);}
 
-				self.element.selectAll('.follower').style('display', function(d) {
-					var follow = d3.select(this).attr('follow-id');
-					var node = self.layout.getNode(follow);
-					return self.isNodeVisible(node) ? '' : 'none';});
-
-				console.log(self.visibleFilters);
-			}
+				self.updateNodes(self.followerNodes);}
 
 		});
 
@@ -753,10 +847,9 @@
 			.attr('dominant-baseline', 'middle')
 			.text('Protein');
 
-
 		legend.each($P.D3.Protein.appender({
 			x: leftX + 99,
-			y: y + 4}));
+			y: y}));
 
 		y += 24;
 		checkbox('small', y);
@@ -829,46 +922,8 @@
 			x: leftX + 98,
 			y: y}));
 
-		y += 30;
-		legend.append('text')
-			.style('font-size', '14px')
-			.attr('x', textX)
-			.attr('y', y)
-			.attr('fill', 'black')
-			.attr('dominant-baseline', 'middle')
-			.text('Expression:');
 
-		y += 19;
-		legend.append('text')
-			.style('font-size', '14px')
-			.attr('x', textX + 12)
-			.attr('y', y)
-			.attr('fill', 'black')
-			.attr('dominant-baseline', 'middle')
-			.text('Up');
-
-		legend.append('circle')
-			.attr('stroke', 'black')
-			.attr('fill', '#CCCC00')
-			.attr('r', 7.5)
-			.attr('transform', 'translate('+(leftX+98)+','+y+')');
-
-		y += 19;
-		legend.append('text')
-			.style('font-size', '14px')
-			.attr('x', textX + 12)
-			.attr('y', y)
-			.attr('fill', 'black')
-			.attr('dominant-baseline', 'middle')
-			.text('Down');
-
-		legend.append('circle')
-			.attr('stroke', 'black')
-			.attr('fill', '#0000CC')
-			.attr('r', 7.5)
-			.attr('transform', 'translate('+(leftX+98)+','+y+')');
-
-		y += 20;
+		y += 26;
 		checkbox('reaction', y);
 
 		legend.append('text')
@@ -879,25 +934,9 @@
 			.attr('dominant-baseline', 'middle')
 			.text('Reaction');
 
-		legend.append('rect')
-			.attr('stroke', 'black')
-			.attr('fill', 'red')
-			.attr('width', 7.5).attr('height', 7.5)
-			.attr('transform', 'translate('+(leftX+94)+','+(y-4)+')');
-
-		y += 20;
-		legend.append('text')
-			.style('font-size', '14px')
-			.attr('x', textX)
-			.attr('y', y)
-			.attr('fill', 'black')
-			.attr('dominant-baseline', 'middle')
-			.text('Crosstalk');
-
-		legend.each($P.D3.Protein.appender({
-			crosstalk: true,
+		legend.each($P.D3.Reaction.appender({
 			x: leftX + 98,
-			y: y + 4}));
+			y: y}));
 
 		y += 20;
 		checkbox('paper', y);
@@ -913,6 +952,59 @@
 			.attr('points', '7.5,6 -7.5,6 0,-8.25')
 			.style('stroke', 'black')
 			.style('fill', 'cyan')
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		y += 24;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Crosstalk');
+
+		legend.each($P.D3.Protein.appender({
+			crosstalk: true,
+			x: leftX + 98,
+			y: y}));
+
+		y += 24;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Expression:');
+
+		y += 19;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Up');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', '#f00')
+			.attr('r', 7.5)
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		y += 19;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Down');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', '#0f0')
+			.attr('r', 7.5)
 			.attr('transform', 'translate('+(leftX+98)+','+y+')');
 
 		return legend;};

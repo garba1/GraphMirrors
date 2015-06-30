@@ -196,12 +196,19 @@
 						this.parent.parent.add(new $P.Bubble.IFrame({
 							w: 560,
 							h: 500,
-							url: 'http://www.ncbi.nlm.nih.gov/gquery/?term=' + datum.value}));}
+							url: 'http://www.ncbi.nlm.nih.gov/gquery/?term=' + datum.value}));
+						d3.event.stopPropagation();
+						d3.event.preventDefault();
+						return true;}
 					if ('right' === button) {
 						if ('string' === typeof datum.value) {
 							table = new $P.Table({
+								name: datum.value,
 								queryObject: {dbId: this.dbId, symbol: datum.value}});
-							self.parent.parent.add(table);}}}
+							self.parent.parent.add(table);
+							d3.event.stopPropagation();
+							d3.event.preventDefault();
+							return true;}}}
 				else if('crosstalk' === datum.key || 'crossTalk' === datum.key) {
 					if ('left' === button) {
 						if (0 === datum.value) {
@@ -213,8 +220,12 @@
 								pathways = self._symbols2Pathways.pathwayNames[symbolIndex].slice(0);
 								for (i = 0; i < pathways.length; ++i) {
 									pathways[i] = $.trim(pathways[i]);}
-								if (!treeRing) {return;}
-								treeRing.createSvg({highlightPathways: pathways});}}}}},
+								if (!treeRing) {return true;}
+								treeRing.createSvg({highlightPathways: pathways});}}
+						d3.event.stopPropagation();
+						d3.event.preventDefault();
+						return true;}}
+				return false;},
 
 			exportData: function() {
 				var self = this;

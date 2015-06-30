@@ -7,6 +7,7 @@
 			var i, view;
 
 			this.views = [];
+			this.collapsedLocations = config.collapsedLocations || {};
 
 			this.svg = config.svg;
 			if (!this.svg) {
@@ -37,14 +38,13 @@
 			this.h = config.h || this.svg.attr('height');
 
 			this.zoomBase = config.zoomBase;
-			if (this.zoomBase) {
-				console.log(this.zoomBase, this.zoomBase.translate(), this.zoomBase.scale());}
 
 			for (i = 0; i < this.viewCount; ++i) {
 				view = new this.viewConstructor({
 					svg: this.svg,
 					parent: this.parent,
 					parentBubble: this.parentBubble,
+					display: this,
 					layout: this.layout,
 					shape: this.shape,
 					displayArgument: config.viewArgs[i],
@@ -96,11 +96,21 @@
 				save.objects[id] = result;
 				result.layout = save.save(this.layout);
 				result.shape = save.save(this.shape);
+				result.collapsedLocations = save.save(this.collapsedLocations);
 				result.viewConstructor = this.viewConstructor.name;
 				return id;},
 
 			getZoomBase: function() {
-				return this.views.length > 0 && this.views[0].zoom.base;}
+				return this.views.length > 0 && this.views[0].zoom.base;},
+
+			// Force display to update.
+			updateDisplay: function() {
+				this.layout.updateDisplay();},
+
+			updateAggregation: function() {
+				var args = arguments;
+				this.views.forEach(function(view) {
+					view.updateAggregation.apply(view, args);});}
 		});
 
 	$P.ForceDisplay.loader = function(load, id, data) {

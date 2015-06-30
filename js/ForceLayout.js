@@ -19,7 +19,7 @@
 			if (config.nodes) {this.addNodes(config.nodes, true);}
 			if (config.links) {this.addLinks(config.links, true);}
 			this.tickListeners = config.tickListeners || [];
-			this.changeListeners = config.changeListeners || [];
+			this.displayListeners = config.displayListeners || [];
 			this.unpositionedNodes = false;
 			this.shape = config.shape || null;
 
@@ -248,10 +248,16 @@
 			onTick: function() {
 				var self = this;
 				this.positionNewNodes();
-				if (this.shape) {this.shape.onTick(this);}
-				this.tickListeners.forEach(function(listener) {listener(self, self.tickArgument);});},
+				if (this.shape) {this.shape.onTick(this, self.tickArgument);}
+				this.tickListeners.forEach(function(listener) {listener(self, self.tickArgument);});
+				this.updateDisplay();},
 			registerTickListener: function(listener) {
 				this.tickListeners.push(listener);},
+			registerDisplayListener: function(listener) {
+				this.displayListeners.push(listener);},
+
+			updateDisplay: function() {
+				this.displayListeners.forEach(function(listener) {listener(self);});},
 
 			saveCallback: function(save, id) {
 				var self = this;

@@ -27,8 +27,6 @@
 			this._file = config.file || null;
 			this.displayMode = config.displayMode || 'title';
 			this._species = config.species || 'Gallus';
-			this._localExpressionPercent = true;
-			this._fisher = (undefined === config.fisher) ? true : config.fisher;
 			this.orthologFile = config.orthologFile || null;
 			this.orthologLabel = '';
 			if (this.orthologFile) {this.orthologLabel = this.orthologFile.name;}
@@ -100,19 +98,6 @@
 				this._displayMode = value;
 				if (this.menu) {this.menu.updateDisplayMode(value);}
 				if (this.svg) {this.svg.displayMode = value;}},
-			get localExpressionPercent() {return this._localExpressionPercent;},
-			set localExpressionPercent(value) {
-				if (value === this._localExpressionPercent) {return;}
-				this._localExpressionPercent = value;
-				if (this.menu) {
-					$(this.menu.element).find('#localExpressionPercent').prop('checked', value);}
-				this.createSvg();},
-			get fisher() {return this._fisher;},
-			set fisher(value) {
-				if (value === this._fisher) {return;}
-				this._fisher = value;
-				if (this.menu) {this.menu.fisher = value;}
-				this.createSvg({fisher: value});},
 			afterAdded: function(parent) {
 				$P.BubbleBase.prototype.afterAdded.call(this, parent);
 				if (!this.svg) {
@@ -138,9 +123,7 @@
 				if (!this.dataType) {this.dataType = 'Gallus';}
 				$.extend(actual_config, {
 					defaultRadius: Math.min(this.w - this.legendWidth, this.h) - 30,
-					dataType: this.dataType,
-					localExpressionPercent: this.localExpressionPercent,
-					fisher: this.fisher});
+					dataType: this.dataType});
 				if (this.dataName) {actual_config.name = this.dataName;}
 				if (this.selectedData) {actual_config.selectedData = this.selectedData;}
 				if (this.orthologFile) {actual_config.orthologFile = this.orthologFile;}
@@ -285,14 +268,6 @@
 			tmp +=     '</select>';
 			tmp +=   '</div>';
 
-			tmp +=   '<div id="localPercentBlock" style="font-size: 85%;">';
-			tmp +=     '<input id="localExpressionPercent" type="checkbox" style="vertical-align: middle;"/> Local Expression Percentage<br/>';
-			tmp +=   '</div>';
-
-			tmp +=   '<div id="fisherBlock" style="font-size: 85%;">';
-			tmp +=     '<input id="fisher" type="checkbox" style="vertical-align: middle;"/> Enable Fisher Test<br/>';
-			tmp +=   '</div>';
-
 			tmp += '</div>';
 
 			tmp += '<div style="border: 1px solid #bbb; border-top-style: none; margin: 0 1px 1px; padding: 2%;">';
@@ -343,26 +318,9 @@
 			element.find('input[type=radio][name=displayMode]').change(function() {
 				bubble.displayMode = this.value;});
 
-			if (!(bubble.svg && bubble.svg.customExpression)) {
-				element.find('#localPercentBlock').hide();
-				element.find('#fisherBlock').hide();}
-
-			element.find('#localExpressionPercent').change(function() {
-				bubble.localExpressionPercent = $(this).prop('checked');});
-			element.find('#localExpressionPercent').prop('checked', bubble.localExpressionPercent);
-
 			this.species = bubble.species;
 			element.find('#selectSpecies').change(function() {
 				bubble.species = $(this).val();});
-
-			this.fisher = bubble.fisher;
-			element.find('#fisher').change(function() {
-				bubble.fisher = $(this).prop('checked');
-				if ($(this).prop('checked')) {
-					element.find('#localPercentBlock').hide();}
-				else {
-					element.find('#localPercentBlock').show();}
-			});
 
 			element.find('#crosstalkLevel').change(function () {
 				bubble.crosstalkLevel = $(this).val();});
@@ -410,8 +368,6 @@
 				$(this.element).find('#selectSpecies').val(value);},
 			set crosstalkLevel(value) {
 				$(this.element).find('#crosstalkLevel').val(value);},
-			set fisher(value) {
-				$(this.element).find('#fisher').prop('checked', value);},
 			loadOrtholog: function() {
 				var menu = this,
 						bubble = this.parent,
@@ -477,8 +433,7 @@
 					bubble.expressionLabel = bubble.selectedFile.name;
 					bubble.experimentType = 'Expression';
 					bubble.createSvg(config);
-					$(menu.element).find('#fisherBlock').show();
-					$(menu.element).find('#localPercentBlock').show();});}
+				});}
 		});
 
 	$P.TreeRing.loader = function(load, id, data) {

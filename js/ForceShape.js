@@ -69,7 +69,7 @@
 				this.zooms.push(zoom);
 				return zoom;},
 
-			onTick: function(layout) {},
+			onTick: function(layout, argument) {},
 			updateClip: function(view) {},
 			getDividers: function(count) {},
 
@@ -89,7 +89,8 @@
 			transform: function(view) {
 				return 'translate(' + this.cx + ',' + this.cy + ')';},
 			textTransform: function(view) {return '';},
-			onTick: function(layout) {
+			onTick: function(layout, argument) {
+				if ('display' === argument) {return;}
 				var force = layout.force,
 						alpha = force.alpha(),
 						gravity = 0.03 * alpha;
@@ -136,7 +137,8 @@
 			textTransform: function(view) {
 				var flipX = this.flipX(view.index);
 				return 'scale(' + (flipX ? -1 : 1) + ', 1)';},
-			onTick: function(layout) {
+			onTick: function(layout, argument) {
+				if ('display' === argument) {return;}
 				var force = layout.force,
 						alpha = force.alpha(),
 						size = force.size(),
@@ -145,7 +147,8 @@
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
 					node.x += -node.x * power;
-					node.y += -node.y * power;});},
+					//node.y += -node.y * power;
+				});},
 			updateClip: function(view) {
 				view.clip.selectAll('*').remove();
 				view.clip.append('rect')
@@ -195,7 +198,8 @@
 			textTransform: function(view) {
 				var angle = view.index * this.angle * 180 / Math.PI;
 				return 'rotate(' + (-angle) + ')';},
-			onTick: function(layout) {
+			onTick: function(layout, argument) {
+				if ('display' === argument) {return;}
 				var force = layout.force,
 						alpha = force.alpha(),
 						size = force.size(),

@@ -20,7 +20,6 @@
 				text: 'S',
 				action: function(canvas, x, y) {
 					self.mode = 'split' === self.mode ? 'soup' : 'split';
-					console.log('display', self.content.display);
 					if ('split' === self.mode) {self.content.layoutSplit();}
 					if ('soup' === self.mode) {self.content.layoutSoup();}
 					self.content.updateSvgPosition();}}));
@@ -64,6 +63,11 @@
 
 				return false;},
 
+			onDelete: function() {
+				$P.Bubble.prototype.onDelete.call(this);
+				if (this.content) {
+					this.content.layout.force.stop();}},
+
 			saveCallback: function(save, id) {
 				var self = this;
 				var result = {};
@@ -77,6 +81,7 @@
 				result.contentConfig = save.save(self.content);
 
 				return id;},
+
 
 			saveKeys: [].concat($P.Bubble.prototype.saveKeys, [
 				'mode', 'pathways', 'contentConfig'])
