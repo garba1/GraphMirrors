@@ -83,7 +83,7 @@
 							klass: 'location',
 							entities: [],
 							color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
-							gravityMultiplier: 3,
+							gravityMultiplier: 0.8,
 							charge: -120};
 						this.addNode(node);
 					}

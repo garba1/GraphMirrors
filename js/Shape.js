@@ -81,7 +81,8 @@ $P.Shape.Rectangle = $P.defineClass(
 		this.cornerRadius = config.cornerRadius || 0;
 		this.strokeStyle = config.strokeStyle || '#00f';
 		this.fillStyle = config.fillStyle || '#FEC';
-		this.lineWidth = config.lineWidth || 1;
+		if (undefined === config.lineWidth) {config.lineWidth = 1;}
+		this.lineWidth = config.lineWidth;
 
 		highlight = config.highlight || {};
 		this.highlight = {

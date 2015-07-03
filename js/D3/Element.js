@@ -5,26 +5,32 @@
 	$P.D3.Element = $P.defineClass(
 		null,
 		function D3Element(config) {
-			this.selection = d3.select(config.parent).append(config.elementType);
+			if (config.element) {
+				this.selection = d3.select(config.element);}
+			else {
+				this.selection = d3.select(config.parent).append(config.elementType);}
 			this.selection.classed('update-displays', true);
 		},
 		{
-			update: function() {}
+			update: function() {},
+			remove: function() {this.selection.remove();}
 		});
 
 	$P.D3.Element.appender = function(constructor, config, callback) {
 		return function(d, i) {
-			if (config instanceof Function) {
-				config = config.call(this, d, i);}
+			var c = config;
+			if (c instanceof Function) {
+				c = c.call(this, d, i);}
 			else if (!config) {
-				config = {};}
+				c = {};}
 
-			config.parent = this;
-			config.datum = d || {};
-			config.index = i;
+			c.parent = this;
+			c.datum = d || {};
+			c.index = i;
 
-			var object = new constructor(config);
-			if (callback) {callback(object);}};};
+			var object = new constructor(c);
+			if (callback) {callback(object);}
+			return object;};};
 
 
 })(PATHBUBBLES);

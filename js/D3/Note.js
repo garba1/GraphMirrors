@@ -1,10 +1,10 @@
 (function($P) {
 	'use strict';
 
-	$P.D3.Protein = $P.defineClass(
+	$P.D3.Note = $P.defineClass(
 		$P.D3.Element,
-		function D3Protein(config) {
-			if (!(this instanceof D3Protein)) {return new D3Protein(config);}
+		function D3Note(config) {
+			if (!(this instanceof D3Note)) {return new D3Note(config);}
 			config.elementType = 'g';
 			$P.D3.Element.call(this, config);
 			var self = this;
@@ -41,9 +41,8 @@
 				.attr('ry', this.size * 3)
 				.attr('transform', this.transform);
 
-			if (undefined === config.datum.displays) {
-				config.datum.displays = [];
-				config.datum.displays.__no_save__ = true;}
+			config.datum.proteinDisplay = this;
+			config.datum.displays = config.datum.displays || [];
 			config.datum.displays.push(this);
 
 			return this;},

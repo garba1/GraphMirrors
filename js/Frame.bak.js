@@ -4,26 +4,24 @@
 	$P.Frame = $P.defineClass(
 		$P.Shape.Rectangle,
 		function Frame(config) {
-			if (!(this instanceof Frame)) {return new Frame(config);}
-
-			config.fillStyle = config.fillStyle || '#fff';
-			config.w = config.w || 500;
-			config.h = config.h || 500;
-			config.cornerRadius = config.cornerRadius || 12;
-			if (undefined === config.lineWidth) {config.lineWidth = 6;}
-			if (undefined !== config.resizeWidth) {this.resizeWidth = config.resizeWidth;}
-
-			var parent = config.parent;
-			config.parent = null;
+			config = $.extend({}, this.defaultConfig, config);
 			$P.Shape.Rectangle.call(this, config);
 
-			this.minSize = config.minSize || {w: 100, h: 100};
+			this.minSize = config.minSize;
 			if ('current' === this.minSize) {
-				this.minSize = {w: this.w, h: this.h};};
+				this.minSize = {w: this.w, h: this.h};}
 
-			if (parent) {parent.add(this);}
-			return this;},
+		},
 		{
+			defaultConfig: {
+				strokeStyle: 'black',
+				fillStyle: 'white',
+				w: 500,
+				h: 500,
+				cornerRadius: 20,
+				lineWidth: 12,
+				minSize: {w: 100, h: 100}},
+
 			receiveEvent: function(event) {
 				var result;
 				result = $P.Object2D.prototype.receiveEvent.call(this, event);
@@ -39,10 +37,12 @@
 				var direction, cursor;
 				if (event.name !== 'mousemove') {return false;}
 
-				if (this.contains(event.x, event.y)) {return false;}
+				if (this.contains(event.x, event.y)) {
+					this.bringToFront();
+					return false;}
 
 				direction = this.getResizeDirection(event.x, event.y);
-				if (direction && this.expandedContains(event.x, event.y, this.resizeWidth || this.lineWidth)) {
+				if (direction && this.expandedContains(event.x, event.y, this.lineWidth)) {
 					cursor = direction + '-resize';
 					$P.state.mainCanvas.setCursor(cursor);
 					return true;}
@@ -61,10 +61,11 @@
 				y = event.y;
 
 				if (this.expandedContains(x, y, -this.lineWidth)) {
+					// Interior Drag.
 					return true;}
 				else if (this.contains(x, y)) {
-					this.parent.bringToFront && this.parent.bringToFront();
-					$P.state.mainCanvas.beginDrag(this.parent, x, y);
+					this.bringToFront();
+					//$P.state.mainCanvas.beginDrag(this.parent, x, y);
 					return true;}
 				else if (this.expandedContains(x, y, this.lineWidth)) {
 					$P.state.mainCanvas.beginResize(this, this.getResizeDirection(x, y), x, y);
@@ -103,12 +104,16 @@
 			 * @returns - the {l, r, t, b} that was unused.
 			 */
 			resize: function(direction, dx, dy) {
-				var l = 0, r = 0, t = 0, b = 0,
+				var horizontalMode, verticalMode, other,
+						l = 0, r = 0, t = 0, b = 0,
+						lr = 0, rl = 0,
 						newW, newH, multW = 1, multH = 1;
 				if (direction.indexOf('w') != -1) {
-					l = -dx;}
+					l = -dx;
+					lr = dx;}
 				if (direction.indexOf('e') != -1) {
-					r = dx;}
+					r = dx;
+					rl = -dx;}
 				if (direction.indexOf('n') != -1) {t = -dy;}
 				if (direction.indexOf('s') != -1) {b = dy;}
 
@@ -123,18 +128,17 @@
 						multH = (this.minSize.h - this.h) / (t + b);}}
 
 				this.expandEdges(r * multW, t * multH, l * multW, b * multH);
+				if (this.neighbors.left) {
+					this.neighbors.left.expandEdges(lr * multW, 0, 0, 0);}
+				if (this.neighbors.right) {
+					this.neighbors.right.expandEdges(0, 0, rl * multW, 0);}
 
 				return {
 					l: l * (1 - multW),
 					r: r * (1 - multW),
 					t: t * (1 - multH),
-					b: b * (1 - multH)};},
+					b: b * (1 - multH)};}
 
-			saveKeys: [
-				'x', 'y', 'w', 'h',
-				'strokeStyle', 'fillStyle',
-				'cornerRadius', 'lineWidth',
-				'minSize']
 		});
 
 })(PATHBUBBLES);

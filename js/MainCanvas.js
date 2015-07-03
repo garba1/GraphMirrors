@@ -50,9 +50,9 @@ $P.MainCanvas = $P.defineClass(
 			this.html.width = window.innerWidth;
 			this.html.height = window.innerHeight;},
 
-		mousedown: function(event, x, y) {this.mode.mousedown(event, x + $P.state.scrollX, y);},
-		mousemove: function(event, x, y) {this.mode.mousemove(event, x + $P.state.scrollX, y);},
-		mouseup: function(event, x, y) {this.mode.mouseup(event, x, y);},
+		mousedown: function(event, x, y, owner) {this.mode.mousedown(event, x + $P.state.scrollX, y, owner);},
+		mousemove: function(event, x, y, owner) {this.mode.mousemove(event, x + $P.state.scrollX, y);},
+		mouseup: function(event, x, y, owner) {this.mode.mouseup(event, x + $P.state.scrollX, y);},
 
 		clear: function() {
 			var gradient,

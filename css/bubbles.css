@@ -18,6 +18,18 @@
 }
 
 
+.note {
+		background-color: rgba(255, 255, 100, 0.65);
+		color: black;
+		font-size: small;
+		overflow: hidden;
+		padding: 1px;
+		z-index: 10000;
+		max-height: 100%;
+}
+
+
+
 .tooltip {
 		fill: #333,
 		font-size: 12px;

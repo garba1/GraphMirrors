@@ -27,7 +27,7 @@
 				config.h -= 16;
 				config.parent = this;
 				config.url = this.url;
-				this.content = new $P.Bubble.Note.Content(config);
+				this.content = new $P.HtmlNote(config);
 				if (this._readyText) {
 					this.text = this._readyText;
 					delete this._readyText;}},
@@ -35,18 +35,6 @@
 			saveKeys: [].concat($P.Bubble.prototype.saveKeys, ['text'])
 
 		});
-
-	$P.Bubble.Note.Content = $P.defineClass(
-		$P.HtmlObject,
-		function NoteBubbleContent(config) {
-			$P.HtmlObject.call(this, {
-				parent: '#bubble',
-				before: '#overlayCanvas',
-				type: 'textarea',
-				pointer: 'all',
-				objectConfig: config});},
-		{});
-
 	$P.Bubble.Note.loader = function(load, id, data) {
 		var config = {};
 		$P.Bubble.Note.prototype.saveKeys.forEach(function(key) {

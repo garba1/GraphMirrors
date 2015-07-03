@@ -1,10 +1,10 @@
 (function($P) {
 	'use strict';
 
-	$P.D3.Diminished = $P.defineClass(
+	$P.D3.Paper = $P.defineClass(
 		$P.D3.Element,
-		function D3Diminished(config) {
-			if (!(this instanceof D3Diminished)) {return new D3Diminished(config);}
+		function D3Paper(config) {
+			if (!(this instanceof D3Paper)) {return new D3Paper(config);}
 			config.elementType = 'g';
 			$P.D3.Element.call(this, config);
 			var self = this;
@@ -19,25 +19,20 @@
 					self[key] = self[key].call(config.parent, config.datum, config.index);}}
 
 			set('stroke', 'black');
-			set('fill', 'gray');
-			set('highlight', 'cyan');
+			set('fill', 'cyan');
 			set('size', 20);
 			this.size /= 20;
-			set('highlighted', false);
 			set('x', 0);
 			set('y', 0);
-			this.selection.attr('transform', 'translate('+this.x+','+this.y+')')
-				.attr('class', 'diminished-entity');
-			this.rectSelection = this.selection.append('rect')
-				.attr('class', 'protein')
-				.attr('stroke', this.stroke)
-				.attr('fill', this.fill)
-				.attr('x', -this.size * 4)
-				.attr('y', -this.size * 4)
-				.attr('width', this.size * 8)
-				.attr('height', this.size * 8)
-				.attr('rx', this.size * 2)
-				.attr('ry', this.size * 2);
+			this.selection.attr('transform', 'translate('+this.x+','+this.y+')');
+			this.mainSelection = this.selection.append('polygon')
+				.classed('paper', true)
+				.attr('points', ''
+							+ (5 * this.size) + ',' + (4 * this.size)
+							+ ' ' + (-5 * this.size) + ',' + (4 * this.size)
+							+ ' 0,' + (-5.5 * this.size))
+				.style('stroke', this.stroke)
+				.style('fill', this.fill);
 
 			if (undefined === config.datum.displays) {
 				config.datum.displays = [];
@@ -62,10 +57,8 @@
 						.attr('x', -this.size * (5 + value * 1.5))
 						.attr('y', - this.size * (5 + value * 1.5))
 						.attr('width', this.size * (10 + value * 3))
-						.attr('height', this.size * (10 + value * 3))
-						.attr('rx', this.size * 2)
-						.attr('ry', this.size * 2);}}
+						.attr('height', this.size * (10 + value * 3));}}
 		});
-	$P.D3.Diminished.appender = $P.D3.Element.appender.bind(undefined, $P.D3.Diminished);
+	$P.D3.Reaction.appender = $P.D3.Element.appender.bind(undefined, $P.D3.Reaction);
 
 })(PATHBUBBLES);

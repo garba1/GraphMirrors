@@ -460,7 +460,6 @@
 								$P.state.scene.add(force);
 								result = force.receiveEvent(event);}
 
-							console.log('result', result);
 							if (result && result.addLink) {
 								$P.state.scene.addLink(new $P.BubbleLink({
 									strokeStyle: 'black',

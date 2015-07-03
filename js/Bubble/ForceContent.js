@@ -4,34 +4,36 @@
 	$P.Bubble.ForceContent = $P.defineClass(
 		$P.HtmlObject,
 		function  ForceBubbleContent(config) {
-			$P.HtmlObject.call(this, {
+			var self = this;
+
+			$P.HtmlObject.call(self, {
 				parent: '#bubble',
 				type: 'div',
 				pointer: 'all',
 				objectConfig: config});
 
-			this.svg = d3.select(this.element).append('svg').attr('class', 'svg');
-			this.svg.main = this.svg.append('g');
+			self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
+			self.svg.main = self.svg.append('g');
 
-			this.layout = config.layout || new $P.PathwayForceLayout();
+			self.layout = config.layout || new $P.PathwayForceLayout();
 
-			this.layout.registerDisplayListener(this.onTick.bind(this));
-			this.layout.force.gravity(0);
-			this.layout.gravity = 0.03;
+			self.layout.registerDisplayListener(self.onTick.bind(self));
+			self.layout.force.gravity(0);
+			self.layout.gravity = 0.03;
 
 			if (config.translate || config.scale) {
-				this.zoomBase = {
+				self.zoomBase = {
 					translate: function() {return config.translate || [0, 0];},
 					scale: function() {return config.scale || 1;}};}
 
-			this.pathways = [];
+			self.pathways = [];
 			if (config.pathways) {
-				this.setPathways(config.pathways);}
+				self.setPathways(config.pathways);}
 
-			this.legendWidth = config.legendWidth || 130;
-			this.mode = config.mode || 'split';
+			self.legendWidth = config.legendWidth || 130;
+			self.mode = config.mode || 'split';
 
-			this.updateSvgPosition();
+			self.updateSvgPosition();
 
 		},
 		{
@@ -247,7 +249,7 @@
 					.attr('y2', function(link) {return link.target.y;});
 
 				this.svg.selectAll('.update-displays').each(function(d, i) {
-					if (d.displays) {
+					if (d && d.displays) {
 						d.displays.forEach(function(display) {
 							display.update(self.layout);});}});
 			},

@@ -22,7 +22,7 @@
 					this.x = child.x;
 					this.y = child.y;}
 				$P.Object2D.prototype.add.call(this, child, index);
-				child.setStrokeStyle(this.strokeStyle);
+				child.strokeStyle = this.strokeStyle;
 				this.arrangeChildren();
 				return;},
 			remove: function(child) {

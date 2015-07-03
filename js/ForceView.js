@@ -43,6 +43,7 @@
 				.attr('fill', 'none')
 				.attr('stroke', 'none')
 				.attr('pointer-events', 'all')
+				.style('cursor', 'inherit')
 				.call(self.zoom)
 				.on('mousemove', function() {
 					self.zoom.center(

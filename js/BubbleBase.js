@@ -1,34 +1,25 @@
-/**
- * @author Alexander Garbarino
- * @name PathBubble_BubbleBase
- */
-
 (function($P){
 	'use strict';
 
 	$P.BubbleBase = $P.defineClass(
-		$P.Shape.Rectangle,
+		$P.Frame,
 		function BubbleBase(config) {
 			//if (!(this instanceof BubbleBase)) {return new BubbleBase(config);}
 
 			var group;
 			if (!config.strokeStyle) {
 				config.strokeStyle = $P.BubbleBase.getUnusedColor();}
-			config.fillStyle = config.fillStyle || '#fff';
-			config.w = config.w || 500;
-			config.h = config.h || 500;
 			config.cornerRadius = config.cornerRadius || 20;
-			config.lineWidth = config.lineWidth || 12;
+			console.log(config.lineWidth);
+			if (undefined === config.lineWidth) {config.lineWidth = 12;}
+			console.log(config.lineWidth);
 
 			this.links = [];
 			this.neighbors = {left: null, right: null};
 			var parent = config.parent;
 			config.parent = null;
-			$P.Shape.Rectangle.call(this, config);
 
-			this.minSize = config.minSize || {w: 100, h: 100};
-			if ('current' === this.minSize) {
-				this.minSize = {w: this.w, h: this.h};};
+			$P.Frame.call(this, config);
 
 			if (config.closeMenu) {this.add($P.ActionButton.create('close'));}
 			if (config.mainMenu || this.menu) {
@@ -44,7 +35,6 @@
 			this.title = new $P.Title({parent: this, name: '', strokeStyle: this.strokeStyle});
 			this.name = config.name || '';
 			if (this.name instanceof Function) {this.name = this.name.call(this);}
-			if (parent) {parent.add(this);}
 			return this;},
 		{
 			get name() {return this._name;},
@@ -56,6 +46,10 @@
 			set strokeStyle(value) {
 				if (this._strokeStyle) {$P.BubbleBase.adjustColorCount(this._strokeStyle, -1);}
 				this._strokeStyle = value;
+				if (this.title) {
+					this.title.strokeStyle = value;
+					this.title.fillStyle = value;}
+				$P.state.markDirty();
 				if (this._strokeStyle) {$P.BubbleBase.adjustColorCount(this._strokeStyle, 1);}},
 
 			onRemoved: function(parent) {
@@ -81,7 +75,7 @@
 			},
 			onDelete: function() {
 				this.strokeStyle = null;
-				$P.Object2D.prototype.onDelete.call(this);
+				$P.Frame.prototype.onDelete.call(this);
 				this.links.slice(0)
 					.forEach(function(link) {
 						link.delete();});
@@ -111,9 +105,7 @@
 						this.parent.move(event.bubble.parent.x - this.parent.w - 1);
 						return true;}}
 
-				result = $P.Object2D.prototype.receiveEvent.call(this, event);
-				if (result) {return result;}
-				return this.mousemove(event) || this.mousedown(event);},
+				return $P.Frame.prototype.receiveEvent.call(this, event);},
 
 			/**
 			 * Handle the mousemove event.
@@ -149,7 +141,6 @@
 				y = event.y;
 
 				if (this.expandedContains(x, y, -this.lineWidth)) {
-					// Interior Drag.
 					return true;}
 				else if (this.contains(x, y) || this.title.contains(x, y)) {
 					this.parent.bringToFront();
@@ -160,29 +151,6 @@
 					return true;}
 
 				return false;},
-
-			/**
-			 * For the given coordinates, which direction would we be resizing in?
-			 * @param {number} x - the x coordinate
-			 * @param {number} y - the y coordinate
-			 * @returns {?String} - A direction string, like 'nw', or null for
-			 * an invalid or unknown position. You should be able to append
-			 * '-resize' to the string to get a valid cursor style.
-			 */
-			getResizeDirection: function(x, y) {
-				var xl = this.x,
-						xr = xl + this.w,
-						yt = this.y,
-						yb = yt + this.h;
-				if (xl - x + yt - y > -this.lineWidth) {return 'nw';}
-				if (x - xr + yt - y > -this.lineWidth) {return 'ne';}
-				if (xl - x + y - yb > -this.lineWidth) {return 'sw';}
-				if (x - xr + y - yb > -this.lineWidth) {return 'se';}
-				if (x <= xl) {return 'w';}
-				if (x >= xr) {return 'e';}
-				if (y <= yt) {return 'n';}
-				if (y >= yb) {return 's';}
-				return null;},
 
 			/**
 			 * Resizes this object.
@@ -241,7 +209,7 @@
 					b: b * (1 - multH)};},
 
 			onPositionChanged: function(dx, dy, dw, dh) {
-				$P.Shape.Rectangle.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
+				$P.Frame.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
 				this.repositionMenus();
 				if (!this.inMotion) {
 					$P.state.scene.sendEvent({
@@ -249,24 +217,9 @@
 						bubble: this});}
 			},
 
-			/**
-			 * Sets the stroke color for this bubble.
-			 * @param {string} style - the new style
-			 */
-			setStrokeStyle: function(style) {
-				this.strokeStyle = style;
-				if (this.title) {
-					this.title.strokeStyle = style;
-					this.title.fillStyle = style;}
-				$P.state.markDirty();},
-
-			saveKeys: [
-				'x', 'y', 'w', 'h',
-				'strokeStyle', 'fillStyle',
-				'cornerRadius', 'lineWidth',
-				'minSize',
-				'name']
+			saveKeys: [].concat($P.Frame.prototype.saveKeys, ['name'])
 		});
+	// Gradually shifting to this name:
 	$P.Bubble = $P.BubbleBase;
 
 	/**
@@ -274,7 +227,7 @@
 	 * @type {String[]}
 	 * @static
 	 */
-	$P.BubbleBase.colors = [
+	$P.Bubble.colors = [
 		'#E69F00',
 		'#56B4E9',
 		'#F0E442',
@@ -286,17 +239,17 @@
 	/**
 	 * Table of color to number of bubbles using that color.
 	 */
-	$P.BubbleBase.colorUseCounts = {};
+	$P.Bubble.colorUseCounts = {};
 
-	$P.BubbleBase.getUnusedColor = function() {
+	$P.Bubble.getUnusedColor = function() {
 		var color, i, count;
-		for (i = 0; i < $P.BubbleBase.colors.length; ++i) {
-			color = $P.BubbleBase.colors[i];
-			count = $P.BubbleBase.colorUseCounts[color];
+		for (i = 0; i < $P.Bubble.colors.length; ++i) {
+			color = $P.Bubble.colors[i];
+			count = $P.Bubble.colorUseCounts[color];
 			if (!count || count == 0) {return color;}}
 		return '#666';};
 
-	$P.BubbleBase.adjustColorCount = function(color, count) {
-		$P.BubbleBase.colorUseCounts[color] = ($P.BubbleBase.colorUseCounts[color] || 0) + count;};
+	$P.Bubble.adjustColorCount = function(color, count) {
+		$P.Bubble.colorUseCounts[color] = ($P.Bubble.colorUseCounts[color] || 0) + count;};
 
 })(PATHBUBBLES);

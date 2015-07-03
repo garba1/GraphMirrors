@@ -58,7 +58,7 @@
 					return {target: this, addLink: {color: this.content.getPathwayColor(event)},
 									name: 'addedPathway', pathwayId: event.pathwayId};}
 
-				result = $P.BubbleBase.prototype.receiveEvent.call(this, event);
+				result = $P.Bubble.prototype.receiveEvent.call(this, event);
 				if (result) {return result;}
 
 				return false;},

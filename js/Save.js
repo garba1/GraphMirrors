@@ -39,6 +39,8 @@
 				if ('object' !== typeof object || null === object) {
 					return object;}
 
+				if (object.__no_save__) {return undefined;}
+
 				if (Array.isArray(object)) {
 					save = [];
 					self.objects[id] = save;
@@ -59,6 +61,7 @@
 				// Basic Object.
 				save = {};
 				self.objects[id] = save;
+				console.log('Saving:', object);
 				$.each(object, function(key, value) {
 					save[key] = self.save(value);});
 				return id;},

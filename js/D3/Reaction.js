@@ -36,8 +36,9 @@
 				.attr('width', this.size * 8)
 				.attr('height', this.size * 8);
 
-			config.datum.reactionDisplay = this;
-			config.datum.displays = config.datum.displays || [];
+			if (undefined === config.datum.displays) {
+				config.datum.displays = [];
+				config.datum.displays.__no_save__ = true;}
 			config.datum.displays.push(this);
 
 			return this;},

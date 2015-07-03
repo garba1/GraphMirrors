@@ -105,11 +105,11 @@
 					.attr('width', this.w)
 					.attr('height', this.h);},
 			getDividers: function() {return [];},
-			getLabelPosition: function(view, size) {
+			getLabelPosition: function(view, size, index) {
 				var self = this;
+				if (undefined === index) {index = 0;}
 				if (undefined === size) {size = 14;}
-				return {x: self.w * 0.5, y: self.h - size * 0.5, length: self.w};
-			},
+				return {x: self.w * 0.5, y: self.h - size * (0.5 + index) - (4 * index), length: self.w};},
 			makeZoom: function(layout, view, baseline) {
 				var self = this,
 						zoom = $P.ForceShape.prototype.makeZoom.call(this, layout, view, baseline);
@@ -147,7 +147,7 @@
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
 					node.x += -node.x * power;
-					//node.y += -node.y * power;
+					node.y += -node.y * power * 0.5;
 				});},
 			updateClip: function(view) {
 				view.clip.selectAll('*').remove();
@@ -160,8 +160,7 @@
 			getLabelPosition: function(view, size) {
 				var self = this;
 				if (undefined === size) {size = 14;}
-				return {x: self.w * (0.25 + 0.5 * view.index), y: self.h - size * 0.5, length: self.w * 0.5};
-			},
+				return {x: self.w * (0.25 + 0.5 * view.index), y: self.h - size * 0.5, length: self.w * 0.5};},
 			makeZoom: function(layout, view, baseline) {
 				var self = this,
 						flipX = self.flipX(view.index),
@@ -200,6 +199,7 @@
 				return 'rotate(' + (-angle) + ')';},
 			onTick: function(layout, argument) {
 				if ('display' === argument) {return;}
+				var self = this;
 				var force = layout.force,
 						alpha = force.alpha(),
 						size = force.size(),
@@ -207,6 +207,24 @@
 				layout.nodes.forEach(function(node) {
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
+					/*
+					var nodeAngle = Math.atan2(-node.y, node.x);
+					var midIn = self.angle * 0.5;
+					var midOut = midIn + Math.PI;
+					var dir, anglePower = 100;
+					while (nodeAngle < 0) {nodeAngle += Math.PI * 2;}
+					if (nodeAngle < midIn) {
+						dir = nodeAngle + Math.PI * 0.5;
+						anglePower *= (midIn - nodeAngle) / Math.PI;}
+					else if (midIn <= nodeAngle && nodeAngle < midOut) {
+						dir = nodeAngle - Math.PI * 0.5;
+						anglePower *= (nodeAngle - midIn) / Math.PI;}
+					else if (nodeAngle >= midOut) {
+						dir = nodeAngle + Math.PI * 0.5;
+						anglePower *= (midIn + Math.PI * 2 - nodeAngle) / Math.PI;}
+					node.x += Math.cos(dir) * power * anglePower;
+					node.y += -Math.sin(dir) * power * anglePower;
+					 */
 					node.x += -node.x * power;
 					node.y += -node.y * power;});},
 			updateClip: function(view) {

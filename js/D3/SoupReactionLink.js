@@ -66,7 +66,9 @@
 				.attr('fill', function(d, i) {return d.color;})
 				.attr('opacity', this.opacity);
 
-			config.datum.displays = config.datum.displays || [];
+			if (undefined === config.datum.displays) {
+				config.datum.displays = [];
+				config.datum.displays.__no_save__ = true;}
 			config.datum.displays.push(this);
 
 			return this;},

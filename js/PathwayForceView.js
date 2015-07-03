@@ -12,6 +12,7 @@
 
 			self.hiddenNodeTypes = {};
 			self.highlights = {};
+			self.notes = {};
 
 			self.textTransform = self.shape.textTransform(self);
 
@@ -120,6 +121,7 @@
 			self.drawBackground = self.element.append('g').attr('class', 'layer').attr('pointer-events', 'none');
 
 			function elementLayoutId(element) {return element.__data__.layoutId;}
+			var rightclickNote = self.rightclickNote.bind(self);
 
 			self.links = self.element.selectAll('.link').data(self.visibleLinks)
 				.enter().append('g').attr('class', 'link');
@@ -245,8 +247,7 @@
 										w: 1200,
 										h: 600,
 										url: 'http://research.bioinformatics.udel.edu/rlimsp/view.php?s=1225&abs=0#EvidenceView?pmid=' + d.id
-									}));});
-						}
+									}));});}
 						node.displayTimer = window.setTimeout(display, 150);}})
 				.on('mouseleave', function(d, i) {
 					if (this.lockTooltip) {return;}
@@ -302,6 +303,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.reactions.phosphorylated
 				.each($P.D3.Reaction.appender({
@@ -317,6 +319,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.entities = self.nodes.filter(function(d, i) {return 'entity' === d.klass;});
 			self.entities.diminished = self.entities.filter(function(d, i) {
@@ -410,9 +413,11 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.entities.proteins
 				.each($P.D3.Protein.appender({
+					transform: textTransform,
 					size: nodeSize(14),
 					fill: self.getExpressionColor.bind(self)}))
 				.selectAll('.protein')
@@ -426,6 +431,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.entities.proteins.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
 				.append('circle')
@@ -445,6 +451,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			// Small Molecules.
 			self.entities.small
@@ -463,6 +470,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			// Complex.
 			self.entities.complex
@@ -481,6 +489,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.entities.complex.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
 				.append('circle')
@@ -499,6 +508,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 
 			// Other
@@ -518,6 +528,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.entities.complex.composite.selectAll('.component').data(function(d) {return d.componentNodes;}).enter()
 				.append('circle')
@@ -536,6 +547,7 @@
 						name: d.name,
 						source: self.parentBubble});
 					console.log(d);})
+				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 
 			self.entityLabels = self.nodes.filter(
@@ -555,22 +567,25 @@
 				.attr('stroke-opacity', 0.2)
 				.attr('fill', 'none');
 
-			self.nameLabel = self.pathway ? self.pathway.name : '';
-			self.label = self.root.append('g');
-			self.label.back = self.label.append('rect')
-				.style('stroke', 'black')
-				.style('stroke-width', 2)
-				.style('opacity', self.pathway ? 0.6 : 0)
-				.style('fill', self.pathway && self.pathway.color);
-			self.label.text = self.label.append('text')
-				.style('font-size', '14px')
-				.style('font-weight', 'bold')
-				.style('stroke-width', 1)
-				.attr('fill', 'black')
-				.attr('text-anchor', 'middle')
-				.attr('dominant-baseline', 'middle')
-				.attr('opacity', 1.0)
-				.text(self.nameLabel);
+			if (self.pathway) {
+				self.root.each($P.D3.PathwayLabel.appender(
+					{text: self.pathway.name,
+					 fill: self.pathway.color,
+					 view: self},
+					function(label) {self.label = label;}));}
+			else if (self.pathways) {
+				var data = self.pathways.map(function(pathway) {
+					return {
+						name: pathway.name,
+						color: pathway.color};});
+				self.labels = self.root.selectAll('.pathway-label').data(data).enter().append('g')
+					.each($P.D3.PathwayLabel.appender(
+						function(d, i) {return {
+							element: this,
+							view: self,
+							text: d.name,
+							fill: d.color,
+							index: i};}));}
 
 			// build selections of all follower nodes for a given node.s
 			self.followerNodes = self.element.selectAll('.follower');
@@ -656,25 +671,18 @@
 				if ('down' === expression) {return '#0f0';}
 				return 'white';},
 			onShapeChange: function() {
-				$P.ForceView.prototype.onShapeChange.call(this);
-				if (this.label) {
-					var center = this.shape.getLabelPosition(this, 14),
-							angle = center.rotation || 0,
-							font = Math.min(14, center.length / this.nameLabel.length * 1.5);
-
-					this.label.attr('transform', 'translate(' + center.x + ',' + center.y + ')rotate(' + angle + ')');
-					this.label.back
-						.attr('width', (center.length + 4) + 'px')
-						.attr('x', (-center.length / 2 - 2) + 'px')
-						.attr('height', (font + 4) + 'px')
-						.attr('y', (-font / 2 - 2) + 'px');
-					this.label.text.style('font-size', font + 'px');}
-			},
+				var self = this;
+				$P.ForceView.prototype.onShapeChange.call(self);
+				if (self.label) {
+					self.label.onShapeChange(self.shape);}
+				if (self.labels) {
+					self.labels.each(function(d, i) {
+						d.manager.onShapeChange(self.shape);});}},
 
 			delete: function() {
 				$P.ForceView.prototype.delete.call(this);
-				this.label.remove();
-			},
+				if (this.label) {this.label.remove();}
+				if (this.labels) {this.labels.remove();}},
 
 			linkBackgrounds: function() {},
 
@@ -809,7 +817,21 @@
 					self.updateLinks(self.entityLabelLinks);
 					self.updateLinks(self.locationLinks);}
 
-				self.updateNodes(self.followerNodes);}
+				self.updateNodes(self.followerNodes);},
+
+			rightclickNote: function(selection) {
+				var self = this;
+				selection.on('contextmenu', function(d, i) {
+					d3.event.preventDefault();
+					if (this.note) {
+						this.note.delete();
+						delete self.notes[this.note.id];
+						this.note = null;}
+					else {
+						this.note = new $P.NoteFrame({w: 200, h: 100, follow: this, parent: self.parentBubble});
+						self.notes[this.note.id] = true;}
+				});
+			}
 
 		});
 
