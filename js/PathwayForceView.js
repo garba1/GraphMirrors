@@ -394,6 +394,17 @@
 						.attr('fill-opacity', 0.25)
 						.attr('pointer-events', 'none') // Can't click on them.
 						.attr('r', 100);}});
+			self.entities.diminished.each(function(d, i) {
+				var location = self.layout.getNode('location:'+d.location);
+				if (location) {
+					self.drawBackground.append('circle')
+						.attr('class', 'follower')
+						.attr('follow-id', d.layoutId)
+						.attr('stroke', 'none')
+						.attr('fill', location.color)
+						.attr('fill-opacity', 0.25)
+						.attr('pointer-events', 'none') // Can't click on them.
+						.attr('r', 100);}});
 			// Nodes in the pathway.
 			// An extra box indicating crosstalk.
 			self.entityBackgrounds();

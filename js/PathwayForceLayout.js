@@ -83,9 +83,20 @@
 							klass: 'location',
 							entities: [],
 							color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
-							gravityMultiplier: 0.8,
-							charge: -120};
-						this.addNode(node);
+							gravityMultiplier: 1.2,
+							charge: -90};
+						self.addNode(node);
+
+						// Inter-location links for positioning.
+						self.getNodes('location').forEach(function(location) {
+							if (node === location) {return;}
+							self.addLink({
+								source: location,
+								target: node,
+								linkDistance: 10000,
+								linkStrength: 0.1
+							});
+						});
 					}
 
 					node.entities.push(entity);
@@ -96,7 +107,7 @@
 						id: entity.id,
 						klass: 'entity:location',
 						linkDistance: 40,
-						linkStrength: 0.2};
+						linkStrength: 0.6};
 					this.addLink(link);}},
 			onAddReaction: function(reaction) {
 				var self = this;
