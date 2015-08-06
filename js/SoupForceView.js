@@ -11,15 +11,21 @@
 
 			entityBackgrounds: function() {
 				var self = this;
-				self.entities.pathways = self.entities.append('g');
+				self.entities.selectAll('.pathway-arcs').remove();
+				self.entities.pathways = self.entities.append('g').attr('class', 'pathway-arcs');
 				self.entities.pathways
 					.selectAll('.pathway-section')
 					.data(function(d, i) {
+						d.pathwayArc = this;
 						var pathways = self.activePathways(d);
+						if (d.id == 7021){console.log(d, pathways);}
+						var result = [];
 						pathways.forEach(function(pathway) {
-							pathway.entity = d;
-							pathway.angle = Math.PI * 2 / pathways.length;});
-						return pathways;})
+							var r = Object.create(pathway);
+							r.entity = d;
+							r.angle = Math.PI * 2 / pathways.length;
+							result.push(r);});
+						return result;})
 					.enter().append('path')
 					.attr('d', function(d, i) {
 						return (d3.svg.arc()

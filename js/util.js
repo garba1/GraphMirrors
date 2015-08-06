@@ -80,9 +80,10 @@ $P.isHtmlElementVisible = function(element) {
 	return 'none' !== element.style.display && 'hidden' !== element.style.visibility;};
 
 $P.removeFromList = function(list, element) {
-	var index = list.indexOf(element);
-	if (-1 == index) {return;}
-	list.splice(index, 1);};
+	while (true) {
+		var index = list.indexOf(element);
+		if (-1 == index) {return;}
+		list.splice(index, 1);}};
 
 $P.randomFromList = function(list) {
 	return list[Math.floor(Math.random() * list.length)];};

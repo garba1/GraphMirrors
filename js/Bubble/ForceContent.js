@@ -58,6 +58,8 @@
 					else {
 						pathway.color = colors[0];}}
 
+				self.layout.getNodes().forEach(function(node) {delete node.displays;});
+
 				function onFinish() {
 					$P.state.scene.record({
 						type: 'pathway-added',

@@ -41,7 +41,22 @@
 				}},
 
 			addPathway: function(pathway) {
+				var self = this;
+
+				// Strip active colors.
+				if (undefined === pathway.color) {
+					var colors = $P.BubbleBase.colors.slice(0), color, p;
+					for (p in self.pathways) {
+						$P.removeFromList(colors, self.pathways[p].color);}
+					if (0 === colors.length) {
+						pathway.color = '#666';}
+					else if (-1 !== colors.indexOf(pathway.strokeStyle)) {
+						pathway.color = pathway.strokeStyle;}
+					else {
+						pathway.color = colors[0];}}
+
 				this.pathways.push(pathway);
+
 				if (this.content) {
 					this.content.addPathway(pathway, this.mode);}},
 

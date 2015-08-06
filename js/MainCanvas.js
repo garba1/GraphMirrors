@@ -192,10 +192,11 @@ $P.MainCanvas.Mode.Drag = $P.defineClass(
 			$P.state.scene.enableHtmlPointerEvents();
 			this.selected.highlighted = false;
 			this.selected.inMotion = false;
-			this.selected.receiveEvent({name: 'dragFinish', x: x + $P.state.scrollX, y: y});
+			this.selected.receiveEvent({name: 'dragFinish', x: x, y: y});
 			$P.state.scene.sendEvent({
 				name: 'bubbleMoved',
-				bubble: this.selected});}
+				bubble: this.selected});
+		}
 	});
 
 $P.MainCanvas.Mode.Resize = $P.defineClass(
