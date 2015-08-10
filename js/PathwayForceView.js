@@ -426,11 +426,13 @@
 					console.log(d);})
 				.call(rightclickNote)
 				.append('title').text(nodeTitle);
+			self.entities.proteins.objects = {};
 			self.entities.proteins
 				.each($P.D3.Protein.appender({
 					transform: textTransform,
 					size: nodeSize(14),
-					fill: self.getExpressionColor.bind(self)}))
+					fill: self.getExpressionColor.bind(self),
+					collector: self.entities.proteins.objects}))
 				.selectAll('.protein')
 				.attr('pointer-events', 'all')
 				.attr('transform', textTransform)
@@ -730,6 +732,23 @@
 				if (self.hiddenNodeTypes[key]) {return false;}
 
 				return true;},
+
+			onSearch: function(key) {
+				var i;
+
+				this.searchKey = key;
+				var regex = key.split('').join('.*');
+
+				$.each(this.entities.proteins.objects, function(layoutId, protein) {
+					var d = protein.datum;
+					var target = d.name || d.id || layoutId;
+					protein.searchMatch = target.match(regex);});
+
+				this.nodes.each(function(node) {
+					var target = node.name || node.id || node.layoutId;
+					node.searchMatch = target.match(regex);
+				});
+			},
 
 			updateNodes: function(selection) {
 				var self = this;

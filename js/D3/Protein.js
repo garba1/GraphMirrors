@@ -9,6 +9,8 @@
 			$P.D3.Element.call(this, config);
 			var self = this;
 
+			this.datum = config.datum;
+
 			function set(key, normal) {
 				if (undefined !== config[key]) {
 					self[key] = config[key];}
@@ -41,6 +43,9 @@
 				.attr('ry', this.size * 3)
 				.attr('transform', this.transform);
 
+			if (config.collector) {
+				config.collector[config.datum.layoutId] = self;}
+
 			if (undefined === config.datum.displays) {
 				config.datum.displays = [];
 				config.datum.displays.__no_save__ = true;}
@@ -48,6 +53,15 @@
 
 			return this;},
 		{
+			get searchMatch() {return this._searchMatch;},
+			set searchMatch(value) {
+				if (value === this._searchMatch) {return;}
+				this._searchMatch = value;
+				if (value) {
+					this.rectSelection.attr('stroke', 'green');}
+				else {
+					this.rectSelection.attr('stroke', 'black');}
+			},
 			get crosstalk() {return this._crosstalk;},
 			set crosstalk(value) {
 				if (value === this._crosstalk) {return;}

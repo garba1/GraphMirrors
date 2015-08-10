@@ -152,6 +152,21 @@
 
 				return false;},
 
+			getAllNeighbors: function() {
+				var list = [], neighbor;
+
+				neighbor = this.neighbors.left;
+				while (neighbor) {
+					list.push(neighbor);
+					neighbor = neighbor.neighbors.left;}
+
+				neighbor = this.neighbors.right;
+				while (neighbor) {
+					list.push(neighbor);
+					neighbor = neighbor.neighbors.right;}
+
+				return list;},
+
 			/**
 			 * Resizes this object.
 			 * @param {string} direction - the edge we're resizing from.

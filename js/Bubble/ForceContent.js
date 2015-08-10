@@ -130,6 +130,9 @@
 				else if ('soup' === this.mode) {this.layoutSoup();}
 			},
 
+			onSearch: function(key) {
+				this.display.onSearch(key);},
+
 			layoutPrep: function() {
 				if (this.display) {this.display.delete();}
 				if (this.display && this.display.viewCount > 0) {

@@ -83,6 +83,9 @@
 				if (this.content) {
 					this.content.layout.force.stop();}},
 
+			onSearch: function(key) {
+				this.content.onSearch(key);},
+
 			saveCallback: function(save, id) {
 				var self = this;
 				var result = {};

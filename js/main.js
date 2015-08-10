@@ -66,6 +66,9 @@
 				selector: '#bgCanvas',
 				callback: function (key) {
 					var bubble, state, objects;
+					if (key === 'search') {
+						bubble = new $P.Bubble.Search({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 280, h: 50});
+						$P.state.scene.add(bubble);}
 					if (key === 'treering') {
 						$P.state.scene.add(new $P.TreeRing({
 							x: mousePosX + $P.state.scrollX, y: mousePosY, w: 820, h: 700,
@@ -98,6 +101,7 @@
 						$P.state.markDirty();}
 				},
 				items: {
+					search: {name: 'Open Search Bubble'},
 					'help': {name: 'Open Manual'},
 					'treering': {name: 'Open Entire Pathway'},
 					'force': {name: 'Open Force Bubble'},

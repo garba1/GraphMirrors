@@ -103,6 +103,9 @@
 			getZoomBase: function() {
 				return this.views.length > 0 && this.views[0].zoom.base;},
 
+			onSearch: function(key) {
+				this.views.forEach(function(view) {view.onSearch(key);});},
+
 			// Force display to update.
 			updateDisplay: function() {
 				this.layout.updateDisplay();},
