@@ -57,10 +57,21 @@
 			set searchMatch(value) {
 				if (value === this._searchMatch) {return;}
 				this._searchMatch = value;
-				if (value) {
-					this.rectSelection.attr('stroke', 'green');}
-				else {
-					this.rectSelection.attr('stroke', 'black');}
+				if (value && !this.searchSelection) {
+					this.searchSelection = this.selection.insert('rect', '.protein')
+						.attr('class', 'search')
+						.attr('stroke', null)
+						.attr('fill', 'yellow')
+						.attr('opacity', 0.7)
+						.attr('x', -this.size * 30)
+						.attr('y', -this.size * 20)
+						.attr('width', this.size * 60)
+						.attr('height', this.size * 40)
+						.attr('rx', this.size * 12)
+						.attr('ry', this.size * 6);}
+				if (!value && this.searchSelection) {
+					this.searchSelection.remove();
+					this.searchSelection = null;}
 			},
 			get crosstalk() {return this._crosstalk;},
 			set crosstalk(value) {

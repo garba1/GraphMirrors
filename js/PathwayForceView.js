@@ -734,15 +734,16 @@
 				return true;},
 
 			onSearch: function(key) {
-				var i;
+				var i, regex;
 
 				this.searchKey = key;
-				var regex = key.split('').join('.*');
+				if (key) {
+					regex = key.split('').join('.*');}
 
 				$.each(this.entities.proteins.objects, function(layoutId, protein) {
 					var d = protein.datum;
 					var target = d.name || d.id || layoutId;
-					protein.searchMatch = target.match(regex);});
+					protein.searchMatch = key && target.match(regex) || false;});
 
 				this.nodes.each(function(node) {
 					var target = node.name || node.id || node.layoutId;

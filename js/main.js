@@ -67,7 +67,10 @@
 				callback: function (key) {
 					var bubble, state, objects;
 					if (key === 'search') {
-						bubble = new $P.Bubble.Search({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 280, h: 50});
+						bubble = new $P.Bubble.Search({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 80});
+						$P.state.scene.add(bubble);}
+					if (key === 'pathway') {
+						bubble = new $P.Bubble.Pathway({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 150});
 						$P.state.scene.add(bubble);}
 					if (key === 'treering') {
 						$P.state.scene.add(new $P.TreeRing({
@@ -102,6 +105,7 @@
 				},
 				items: {
 					search: {name: 'Open Search Bubble'},
+					pathway: {name: 'Open Pathway Bubble'},
 					'help': {name: 'Open Manual'},
 					'treering': {name: 'Open Entire Pathway'},
 					'force': {name: 'Open Force Bubble'},
