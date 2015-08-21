@@ -8,6 +8,7 @@
 				closeMenu: true,
 				groupMenu: true});
 			$P.Bubble.call(this, config);
+			if (!this.name) {this.name = 'Search';}
 			if (undefined !== config.text) {this.text = config.text;}},
 		{
 			get text() {return this.content && $(this.content.element).val();},

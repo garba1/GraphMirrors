@@ -67,7 +67,7 @@
 				callback: function (key) {
 					var bubble, state, objects;
 					if (key === 'search') {
-						bubble = new $P.Bubble.Search({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 80});
+						bubble = new $P.Bubble.Search({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 500});
 						$P.state.scene.add(bubble);}
 					if (key === 'pathway') {
 						bubble = new $P.Bubble.Pathway({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 150});

@@ -84,7 +84,10 @@
 					this.content.layout.force.stop();}},
 
 			onSearch: function(key) {
-				this.content.onSearch(key);},
+				return this.content.onSearch(key);},
+
+			zoomTo: function(entity) {
+			  return this.content.zoomTo(entity);},
 
 			saveCallback: function(save, id) {
 				var self = this;

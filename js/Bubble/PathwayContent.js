@@ -22,9 +22,32 @@
 				revertDuration: 0,
 				scroll: false,
 				stop: function(event, ui) {
+					var force;
+
+					if (self.contains(mouse.x, mouse.y)) {return;}
+
 					var mouse = $P.state.mainCanvas.getMouseLocation(event);
 					mouse.x += $P.state.scrollX;
-					console.log(mouse);
+
+					var send = {
+						name: 'dragPathway',
+						x: mouse.x, y: mouse.y,
+						//pathwayId: d.dbId,
+						//pathwayName: d.name,
+						//symbols: d.symbols,
+						strokeStyle: 'gray',
+						expression: null};
+					var result = $P.state.scene.sendEvent(send);
+
+					if (!result) {
+						force = new $P.Bubble.Force({x: mouse.x, y: mouse.y, w: 750, h: 600});
+						$P.state.scene.add(force);
+						result = force.receiveEvent(event);}
+
+					if (result && result.addLink) {
+						// Add Link Here.
+					}
+
 			}});
 
 			root.find('#search_run').click(function(event) {

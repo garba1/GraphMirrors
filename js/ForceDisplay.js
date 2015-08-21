@@ -104,7 +104,13 @@
 				return this.views.length > 0 && this.views[0].zoom.base;},
 
 			onSearch: function(key) {
-				this.views.forEach(function(view) {view.onSearch(key);});},
+				var results = {};
+				this.views.forEach(function(view) {
+					$.each(view.onSearch(key), function(k,v) {results[k] = v;});});
+				return results;},
+
+			zoomTo: function(entity) {
+			  return this.views[0].zoomTo(entity);},
 
 			// Force display to update.
 			updateDisplay: function() {

@@ -131,7 +131,10 @@
 			},
 
 			onSearch: function(key) {
-				this.display.onSearch(key);},
+				return this.display.onSearch(key);},
+
+			zoomTo: function(entity) {
+			  return this.display.zoomTo(entity);},
 
 			layoutPrep: function() {
 				if (this.display) {this.display.delete();}

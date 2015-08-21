@@ -734,7 +734,7 @@
 				return true;},
 
 			onSearch: function(key) {
-				var i, regex;
+				var i, regex, results = {};
 
 				this.searchKey = key;
 				if (key) {
@@ -746,10 +746,20 @@
 					protein.searchMatch = key && target.match(regex) || false;});
 
 				this.nodes.each(function(node) {
-					var target = node.name || node.id || node.layoutId;
+					var target = '' + (node.name || node.id || node.layoutId);
 					node.searchMatch = target.match(regex);
-				});
-			},
+					if (node.searchMatch) {
+						results[node.layoutId] = node;}});
+
+				return results;},
+
+			zoomTo: function(entity) {
+				console.log(entity);
+				var scale = this.zoom.scale();
+				var translate = [-scale * entity.x, -scale * entity.y];
+				console.log(scale, translate);
+				this.zoom.scale(scale).translate(translate);
+				this.onZoom();},
 
 			updateNodes: function(selection) {
 				var self = this;
