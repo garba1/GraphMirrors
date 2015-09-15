@@ -17,21 +17,25 @@
 				return this.x + this.w * 0.5;},
 
 			add: function(child, index) {
+				if (undefined === index) {index = this.children.length;}
 				if (this.children.length === 0) {
 					this.strokeStyle = child.strokeStyle;
 					this.x = child.x;
 					this.y = child.y;}
+				else {
+					this.x -= child.w * (1 - index / this.children.length);}
 				$P.Object2D.prototype.add.call(this, child, index);
 				child.strokeStyle = this.strokeStyle;
 				this.arrangeChildren();
 				return;},
 			remove: function(child) {
+				var index = this.children.indexOf(child);
 				child.neighbors.left = null;
 				child.neighbors.right = null;
 				$P.Object2D.prototype.remove.call(this, child);
 				if (0 == this.children.length) {this.delete();}
 				else {
-					//this.x += child.w * 0.5;
+					this.x += child.w * (1 - index / this.children.length);
 					this.arrangeChildren();}},
 
 			/**

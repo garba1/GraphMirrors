@@ -96,8 +96,6 @@
 					|| self.visibleLocations.indexed[id]
 					|| self.visiblePapers.indexed[id];}
 
-			$P.a=self;
-
 			self.visibleEntities1 = self.layout.nodes.filter(entityFilter1);
 			self.visibleEntities1.indexed = $P.indexBy(self.visibleEntities1, $P.getter('layoutId'));
 			self.visibleReactions = self.layout.nodes.filter(reactionFilter);
@@ -122,6 +120,11 @@
 
 			function elementLayoutId(element) {return element.__data__.layoutId;}
 			var rightclickNote = self.rightclickNote.bind(self);
+
+			self.element.selectAll('.crosshair').append('circle').attr('class', 'crosshair')
+				.attr('r', 40)
+				.attr('fill', 'yellow')
+				.style('opacity', '0');
 
 			self.links = self.element.selectAll('.link').data(self.visibleLinks)
 				.enter().append('g').attr('class', 'link');
@@ -748,17 +751,21 @@
 				this.nodes.each(function(node) {
 					var target = '' + (node.name || node.id || node.layoutId);
 					node.searchMatch = target.match(regex);
-					if (node.searchMatch) {
+					if (['entity', 'reaction'].indexOf(node.klass) != -1
+							&& node.searchMatch) {
 						results[node.layoutId] = node;}});
 
 				return results;},
 
 			zoomTo: function(entity) {
-				console.log(entity);
 				var scale = this.zoom.scale();
 				var translate = [-scale * entity.x, -scale * entity.y];
 				console.log(scale, translate);
 				this.zoom.scale(scale).translate(translate);
+				var crosshair = $(this.element).find('.crosshair');
+				crosshair.css('x', entity.x);
+				crosshair.css('y', entity.y);
+				crosshair.fadeIn(150).fadeOut(150);
 				this.onZoom();},
 
 			updateNodes: function(selection) {

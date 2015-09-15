@@ -68,7 +68,7 @@ for tablename in tables:
         else:
           tc.execute('SELECT entity_id FROM entities WHERE reactome_id=?', (reactome_id,))
           entity_id = tc.fetchone()[0]
-        tc.execute('INSERT INTO entity_pathways '
+        tc.execute('INSERT INTO entity_pathways(entity_id, pathway_id, local_id) '
                    'SELECT ?, ?, ? '
                    'WHERE NOT EXISTS('
                    '  SELECT 1 FROM entity_pathways WHERE entity_id=? AND pathway_id=?)',

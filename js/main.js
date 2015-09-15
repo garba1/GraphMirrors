@@ -62,10 +62,16 @@
 			mousePosY = e.clientY;
 		});
 		function setContextMenu() {
+			var timestamp = Date.now();
 			$('#bubble').contextMenu({
 				selector: '#bgCanvas',
+				show: function(opt) {
+					timestamp = Date.now();},
 				callback: function (key) {
 					var bubble, state, objects;
+					// Don't react for a second to prevent misclicks.
+					if (Date.now() - timestamp < 2000) {return false;}
+
 					if (key === 'search') {
 						bubble = new $P.Bubble.Search({x: mousePosX + $P.state.scrollX, y: mousePosY, w: 300, h: 500});
 						$P.state.scene.add(bubble);}

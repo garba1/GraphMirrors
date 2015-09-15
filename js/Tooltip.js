@@ -25,16 +25,18 @@
 		$P.tooltip.hide = function() {
 			d3.select(this.element).style('opacity', 0);};
 
+		d3.select(document).on('mouseover.tooltip', function(d, i) {$P.tooltip.hide();});
+
 		$P.tooltip.add = function(tooltip) {
 			return function(selection) {
 				if (undefined === tooltip) {tooltip = function(d, i) {return d.tooltip || d.name || '';};}
 				selection
-					.on('mouseover.tooltip', function(d, i) {
+					.on('mouseenter.tooltip', function(d, i) {
 						var contents = tooltip.call(this, d, i);
 						if (contents) {$P.tooltip.show(contents);}})
-					.on('mousemove.tooltip', function(d, i) {$P.tooltip.updatePosition();})
-					.on('mouseleave.tooltip', function(d, i) {$P.tooltip.hide();})
-					.on('mouseout.tooltip', function(d, i) {$P.tooltip.hide();});};};
+					.on('mousemove.tooltip', function(d, i) {
+						$P.tooltip.updatePosition();
+						return true;});};};
 	});
 
 })(PATHBUBBLES);

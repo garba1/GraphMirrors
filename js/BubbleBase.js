@@ -224,13 +224,17 @@
 					b: b * (1 - multH)};},
 
 			onPositionChanged: function(dx, dy, dw, dh) {
-				$P.Frame.prototype.onPositionChanged.call(this, dx, dy, dw, dh);
-				this.repositionMenus();
-				if (!this.inMotion) {
+				var self = this;
+				if (self.x < 0) {
+					$P.state.scene.children.forEach(function(child) {
+						if (child instanceof $P.BubbleGroup) {
+							child.translate(-self.x);}});}
+				$P.Frame.prototype.onPositionChanged.call(self, dx, dy, dw, dh);
+				self.repositionMenus();
+				if (!self.inMotion) {
 					$P.state.scene.sendEvent({
 						name: 'bubbleMoved',
-						bubble: this});}
-			},
+						bubble: self});}},
 
 			saveKeys: [].concat($P.Frame.prototype.saveKeys, ['name'])
 		});
