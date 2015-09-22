@@ -93,8 +93,8 @@
 							self.addLink({
 								source: location,
 								target: node,
-								linkDistance: 10000,
-								linkStrength: 0.1
+								linkDistance: 1000,
+								linkStrength: 0.02
 							});
 						});
 					}
@@ -111,7 +111,7 @@
 					this.addLink(link);}},
 			onAddReaction: function(reaction) {
 				var self = this;
-				reaction.charge = -40;
+				reaction.charge = -90;
 				if (reaction.entities) {
 					// Add links to entities.
 					$.each(reaction.entities, function(entityId, direction) {

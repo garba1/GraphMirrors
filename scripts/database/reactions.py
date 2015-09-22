@@ -31,6 +31,15 @@ sc.execute('SHOW TABLES')
 tables = []
 for (tablename,) in sc:
   tables.append(tablename)
+#tables = ['199220_1pathway2step',
+#          '199220_2step2step',
+#          '199220_3step2reaction',
+#          '199220_4reaction',
+#          '199220_5catalysis',
+#          '199220_6complex',
+#          '199220_7protein',
+#          '199220_8convertedEntity',
+#          '199220_9smallEntity']
 
 # Limit to 30 tables for testing purposes.
 #tables = tables[:30]
@@ -93,7 +102,10 @@ for tablename in tables:
   tc.execute('SELECT pathway_id FROM pathways WHERE reactome_id=?',
              (pathway_reactome_id,))
   pathway_id = tc.fetchone()
-  if pathway_id:
+  lost = {}
+  if not pathway_id:
+    lost[pathway_reactome_id] = True
+  else:
     pathway_id = int(pathway_id[0])
     tabletype = m.group(2)
 
@@ -133,3 +145,6 @@ for tablename in tables:
     target.commit()
 
 target.commit()
+print('Lost:')
+for pathway_reactome_id in lost:
+  print('  ', pathway_reactome_id)

@@ -30,6 +30,17 @@ last_completion = 0
 table_count = 0
 print('Entities:')
 
+#tables = ['199220_1pathway2step',
+#          '199220_2step2step',
+#          '199220_3step2reaction',
+#          '199220_4reaction',
+#          '199220_5catalysis',
+#          '199220_6complex',
+#          '199220_7protein',
+#          '199220_8convertedEntity',
+#          '199220_9smallEntity']
+
+lost={}
 for tablename in tables:
   table_count = table_count + 1
   completion = int(20 * table_count / len(tables))
@@ -44,8 +55,9 @@ for tablename in tables:
   tc.execute('SELECT pathway_id FROM pathways WHERE reactome_id=?',
              (pathway_reactome_id,))
   pathway_id = tc.fetchone()
-
-  if pathway_id:
+  if not pathway_id:
+    lost[pathway_reactome_id]=True
+  else:
     pathway_id = pathway_id[0]
 
     if '7protein' == tabletype or '9smallEntity' == tabletype:
@@ -53,7 +65,8 @@ for tablename in tables:
       for (local_id, name, uniprot_id, reactome_id, location) in sc:
         reactome_id = int(reactome_id[16:])
         if '7protein' == tabletype:
-          uniprot_id = uniprot_id[8:]
+          m = re.search('UniProt:([\w-]+)', uniprot_id)
+          uniprot_id = m.group(1)
         else:
           uniprot_id = None
         m = re.search('^([a-zA-Z_]+)', local_id)
@@ -75,3 +88,6 @@ for tablename in tables:
                    (entity_id, pathway_id, local_id, entity_id, pathway_id))
 
 target.commit()
+print('Lost:')
+for pathway_reactome_id in lost:
+  print('  ', pathway_reactome_id)

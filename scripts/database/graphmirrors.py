@@ -191,5 +191,5 @@ class GraphMirrorsDB(SqliteDatabase):
 
 if '__main__' == __name__:
   db = GraphMirrorsDB()
-  db.update()
+  db.updateIgep()
   db.commit()

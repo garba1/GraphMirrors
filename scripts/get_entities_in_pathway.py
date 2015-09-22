@@ -22,6 +22,8 @@ def get_entities_in_pathway(reactome_id):
   for (entity_id,) in c:
     entity_ids.append(str(entity_id))
 
+  #print(','.join(entity_ids))
+
   return get_entities_by_id(','.join(entity_ids))
 
 if '__main__' == __name__:
