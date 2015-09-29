@@ -13,7 +13,8 @@
 				if (undefined !== config[key]) {
 					self[key] = config[key];}}
 			set('text');
-			set('follow');},
+			set('follow');
+			set('followLayoutId');},
 		{
 			get text() {return this.content && $(this.content.element).val();},
 			set text(value) {
@@ -68,7 +69,7 @@
 
 			//onParentPositionChanged: function() {},
 
-			saveKeys: [].concat($P.Frame.prototype.saveKeys, ['text', 'follow'])
+			saveKeys: [].concat($P.Frame.prototype.saveKeys, ['text', 'followLayoutId'])
 
 
 		});

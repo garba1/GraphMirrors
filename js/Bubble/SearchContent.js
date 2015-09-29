@@ -87,8 +87,6 @@
 						if ($.isEmptyObject(result)) {return;} // Don't append Bubble
 
 					}});
-
-				console.log('SEARCH', results);
 			},
 
 			onAdded: function(parent) {

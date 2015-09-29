@@ -28,7 +28,7 @@
 
 			self.pathways = [];
 			if (config.pathways) {
-				self.setPathways(config.pathways);}
+				self.setPathways(config.pathways, function() {}, config.viewNotes);}
 
 			self.legendWidth = config.legendWidth || 130;
 			self.mode = config.mode || 'split';
@@ -91,7 +91,7 @@
 						mode: 'reactome_pathway_id',
 						id: pathway.pathwayId}});},
 
-			setPathways: function(pathways, finish) {
+			setPathways: function(pathways, finish, viewNotes) {
 				var self = this;
 				self.onPathwaysChanged = function(){}; // temp disable redisplay.
 
@@ -103,6 +103,7 @@
 					else {
 						delete self.onPathwaysChanged;
 						self.onPathwaysChanged();
+						if (viewNotes) {self.addViewNotes(viewNotes);}
 						if (finish) {finish();}}}
 
 				add();},
@@ -117,6 +118,24 @@
 				self.layout.setPathways(self.pathways, function() {
 					self.renewDisplay();
 					self.updateSvgPosition();});},
+
+			addViewNotes: function(viewNotes) {
+				var i, layoutId, notes, view, self = this;
+				for (i = 0; i < viewNotes.length; ++i) {
+					view = this.display.views[i];
+					for (layoutId in viewNotes[i]) {
+						var text = viewNotes[i][layoutId];
+						var element = $P.findFirst(view.entities[0], function(entity) {
+							return entity.__data__.layoutId == layoutId;});
+						console.log('LAYOUT-ID', layoutId);
+						console.log('ELEMENT', element);
+						console.log('DATA', element.__data__);
+						var note = new $P.NoteFrame({
+							w:200, h:100,
+							follow: element, followLayoutId: layoutId,
+							text: text,
+							parent: self.parent});
+						view.notes[note.id] = note;}}},
 
 			getPathwayColor: function(pathway) {
 				var i;
@@ -275,6 +294,13 @@
 				result.legendWidth = save.save(self.legendWidth);
 				result.pathways = save.save(self.pathways);
 				result.layout = save.save(self.layout);
+
+				result.viewNotes = [];
+				self.display.views.forEach(function(view) {
+					var byLayoutId = {};
+					$.each(view.notes, function(_, note) {
+						byLayoutId[note.followLayoutId] = note.text;});
+					result.viewNotes.push(byLayoutId);});
 
 				var zoomBase = this.display && this.display.getZoomBase();
 				if (zoomBase) {

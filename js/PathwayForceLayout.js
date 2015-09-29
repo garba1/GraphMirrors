@@ -56,7 +56,7 @@
 						size = Math.pow(d.componentNodes.length, 0.4);}
 					return target * size;}
 
-				entity.charge = nodeSize(-100, entity);
+				entity.charge = nodeSize(-200, entity);
 				entity.reactions = [];
 
 				// Add label.

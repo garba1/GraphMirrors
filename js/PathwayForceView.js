@@ -438,7 +438,6 @@
 					collector: self.entities.proteins.objects}))
 				.selectAll('.protein')
 				.attr('pointer-events', 'all')
-				.attr('transform', textTransform)
 				.on('click', function(d) {
 					$P.state.scene.record({
 						type: 'force-click',
@@ -470,13 +469,14 @@
 				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			// Small Molecules.
+			self.entities.small.objects = {};
 			self.entities.small
-				.append('circle')
-				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor.bind(self))
-				.attr('r', nodeSize(5))
-				.attr('x', nodeSize(-2.5))
-				.attr('y', nodeSize(-2.5))
+				.each($P.D3.Small.appender({
+					transform: textTransform,
+					size: nodeSize(14),
+					fill: self.getExpressionColor.bind(self),
+					collector: self.entities.small.objects}))
+				.selectAll('.small')
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {
 					$P.state.scene.record({
@@ -876,8 +876,11 @@
 						delete self.notes[this.note.id];
 						this.note = null;}
 					else {
-						this.note = new $P.NoteFrame({w: 200, h: 100, follow: this, parent: self.parentBubble});
-						self.notes[this.note.id] = true;}
+						this.note = new $P.NoteFrame({
+							w: 200, h: 100,
+							follow: this, followLayoutId: d.layoutId,
+							parent: self.parentBubble});
+						self.notes[this.note.id] = this.note;}
 				});
 			}
 
@@ -932,11 +935,9 @@
 			.attr('dominant-baseline', 'middle')
 			.text('Small');
 
-		legend.append('circle')
-			.attr('stroke', 'black')
-			.attr('fill', 'white')
-			.attr('r', 7.5)
-			.attr('transform', 'translate(' + (leftX + 98) + ','+y+')');
+		legend.each($P.D3.Small.appender({
+			x: leftX + 99,
+			y: y}));
 
 		y += 24;
 		checkbox('complex', y);
