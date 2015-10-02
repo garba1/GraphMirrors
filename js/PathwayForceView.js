@@ -94,6 +94,7 @@
 					|| self.visibleEntitylabels.indexed[id]
 					|| self.visibleReactions.indexed[id]
 					|| self.visibleLocations.indexed[id]
+					|| self.diminishedEntities.indexed[id]
 					|| self.visiblePapers.indexed[id];}
 
 			self.visibleEntities1 = self.layout.nodes.filter(entityFilter1);
