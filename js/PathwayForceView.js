@@ -263,6 +263,7 @@
 						this.displayElement = null;}
 				})
 				.on('click', function(d, i) {
+					console.log(d);
 					$P.state.scene.record({
 						type: 'force-click',
 						class: d.klass,

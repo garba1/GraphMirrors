@@ -334,6 +334,12 @@
 				var svg = d3.select(this.element).append('svg')
 							.attr('width', this.w)
 							.attr('height', this.h);
+
+				svg.append('rect')
+					.attr('width', '100%')
+					.attr('height', '100%')
+					.attr('fill', 'white');
+
 				this.svg = svg;
 				self.orthologColors = ['#fdae6b', '#a1d99b', '#bcbddc'];
 				var gGroup;

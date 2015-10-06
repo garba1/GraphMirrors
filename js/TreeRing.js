@@ -41,6 +41,13 @@
 			if (!config.w || config.w < 700) {config.w = 700;}
 			$.extend(config, {mainMenu: true, closeMenu: true, groupMenu: true});
 			$P.BubbleBase.call(this, config);
+
+			this.add($P.ActionButton.create({
+				name: 'export',
+				text: 'E',
+				action: this.exportImage.bind(this)}));
+			this.repositionMenus();
+
 			return this;},
 		{
 			get upName() {return this._upName || 'Up';},
@@ -217,9 +224,14 @@
 			},
 			drawExtra: function(ctx, scale) {this.processingStatus.draw(ctx, this.x+this.w/2, this.y+this.h/2);},
 
+			exportImage: function() {
+				if (!this.svg) {return;}
+				$P.Image.Svg(this.svg.element).saveToSvg('bubble.svg');},
+
 			saveKeys: [].concat($P.Bubble.prototype.saveKeys, [
 				'dataName',
 				'dataType',
+				'name',
 				'experimentType',
 				'species',
 				'legendWidth',

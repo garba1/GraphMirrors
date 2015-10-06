@@ -228,6 +228,7 @@
 		config.nodes = load.loadObject(data.nodes);
 		config.links = load.loadObject(data.links);
 		config.shape = load.loadObject(data.shape);
+		config.alpha = data.alpha;
 
 		var layout = new $P.PathwayForceLayout(config);
 

@@ -301,6 +301,17 @@ $P.asyncOrdered = function(callbacks) {
 		//	console.log('FISHER:', inA, outA, inB, outB, Math.exp(result));}
 		return Math.exp(result);};
 
+	$P.saveBlob = function(blob, filename) {
+		var url = window.URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.setAttribute('href', url);
+		a.setAttribute('download', filename || 'download');
+		a.style.display = 'none';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);};
+
 	$P.saveArray = function(array, filename) {
 		var blob = new Blob(array, {type: 'octet/stream'});
 		var url = window.URL.createObjectURL(blob);

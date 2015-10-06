@@ -178,12 +178,19 @@
 					return null;}
 				this.links.push(link);
 				this.linkData.indexed[link.layoutId] = link;
+
 				if (link.klass) {
 					this.linkData[link.klass] = this.linkData[link.klass] || [];
 					this.linkData[link.klass].push(link);}
 				if (link.source && link.source.layoutId) {
+					// Make sure we're not duplicating the node
+					if (this.nodeData.indexed[link.source.layoutId]) {
+						link.source = this.getNode(link.source.layoutId);}
+					// Add this link to the node.
 					this.applyToNode(link.source.layoutId, function(node) {node.links.push(link);});}
 				if (link.target && link.target.layoutId) {
+					if (this.nodeData.indexed[link.target.layoutId]) {
+						link.target = this.getNode(link.target.layoutId);}
 					this.applyToNode(link.target.layoutId, function(node) {node.links.push(link);});}
 				if (this.linkAddTriggers[link.layoutId]) {
 					this.linkAddTriggers[link.layoutId].forEach(function(callback) {callback(link);});

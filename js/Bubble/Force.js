@@ -23,6 +23,12 @@
 					if ('split' === self.mode) {self.content.layoutSplit();}
 					if ('soup' === self.mode) {self.content.layoutSoup();}
 					self.content.updateSvgPosition();}}));
+
+			self.add($P.ActionButton.create({
+				name: 'export',
+				text: 'E',
+				action: self.exportImage.bind(self)}));
+
 			self.repositionMenus();},
 		{
 			onAdded: function(parent) {
@@ -88,6 +94,10 @@
 
 			zoomTo: function(entity) {
 			  return this.content.zoomTo(entity);},
+
+			exportImage: function() {
+				if (!this.content) {return;}
+				$P.Image.Svg(this.content.element).saveToSvg('bubble.svg');},
 
 			saveCallback: function(save, id) {
 				var self = this;
