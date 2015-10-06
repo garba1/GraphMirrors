@@ -13,12 +13,7 @@
 				objectConfig: config});
 
 			self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
-			self.svg.append('rect')
-				.attr('width', '100%')
-				.attr('height', '100%')
-				.attr('fill', 'white');
 			self.svg.main = self.svg.append('g');
-
 			self.layout = config.layout || new $P.PathwayForceLayout();
 
 			self.layout.registerDisplayListener(self.onTick.bind(self));
@@ -117,6 +112,10 @@
 				if (self.svg) {self.svg.remove();}
 				self.svg = d3.select(self.element).append('svg').attr('class', 'svg');
 				self.svg.main = self.svg.append('g').attr('id', 'main');
+				self.svg.main.append('rect')
+					.attr('width', '100%')
+					.attr('height', '100%')
+					.attr('fill', 'white');
 				self.svg.defs = self.svg.append('defs');
 
 				self.layout.setPathways(self.pathways, function() {

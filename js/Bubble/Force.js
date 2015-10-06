@@ -97,7 +97,7 @@
 
 			exportImage: function() {
 				if (!this.content) {return;}
-				$P.Image.Svg(this.content.element).saveToSvg('bubble.svg');},
+				$P.Image.Svg(this.content.svg[0][0]).saveToSvg('bubble.svg');},
 
 			saveCallback: function(save, id) {
 				var self = this;
