@@ -23,6 +23,7 @@
 			set('text');
 			set('index');
 			set('view');
+			set('pathway');
 
 			set('fontSize', 14);
 			set('fontWeight', 'bold');
@@ -31,7 +32,8 @@
 			set('opacity', 0.6);
 			set('x', 0);
 			set('y', 0);
-			this.selection.attr('transform', 'translate('+this.x+','+this.y+')');
+			this.selection.attr('transform', 'translate('+this.x+','+this.y+')')
+				.on('click', self.onClick.bind(self));
 			this.selection.background = this.selection.append('rect')
 				.attr('stroke', 'black')
 				.attr('stroke-width', 2)
@@ -61,7 +63,10 @@
 					.attr('x', (-center.length / 2 - 2) + 'px')
 					.attr('height', (font + 4) + 'px')
 					.attr('y', (-font / 2 - 2) + 'px');
-				this.selection.text.style('font-size', font + 'px');}
+				this.selection.text.style('font-size', font + 'px');},
+
+			onClick: function() {
+				this.view.parentBubble.content.removePathway(this.pathway);}
 
 		});
 	$P.D3.PathwayLabel.appender = $P.D3.Element.appender.bind(undefined, $P.D3.PathwayLabel);

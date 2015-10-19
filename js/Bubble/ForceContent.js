@@ -16,10 +16,6 @@
 			self.svg.main = self.svg.append('g');
 			self.layout = config.layout || new $P.PathwayForceLayout();
 
-			self.layout.registerDisplayListener(self.onTick.bind(self));
-			self.layout.force.gravity(0);
-			self.layout.gravity = 0.03;
-
 			if (config.translate || config.scale) {
 				self.zoomBase = {
 					translate: function() {return config.translate || [0, 0];},
@@ -57,7 +53,7 @@
 					else {
 						pathway.color = colors[0];}}
 
-				self.layout.getNodes().forEach(function(node) {delete node.displays;});
+				self.layout.nodeList.forEach(function(node) {delete node.displays;});
 
 				function onFinish() {
 					$P.state.scene.record({
@@ -65,7 +61,7 @@
 						id: pathway.pathwayId,
 						name: pathway.pathwayName,
 						bubble: self});
-					self.layout.consolidateComposite();
+					//self.layout.consolidateComposite();
 					//self.layout.consolidateReactions();
 
 					pathway = $.extend({}, pathway, {type: 'pathway'});
@@ -79,16 +75,27 @@
 						if (jsonData.entities) {
 							$.each(jsonData.entities, function(entityId, entity) {
 								entity.klass = 'entity';
+								entity.sourcePathway = pathway.pathwayId;
 								self.layout.addNode(entity);});}
 						if (jsonData.reactions) {
 							$.each(jsonData.reactions, function(reactionId, reaction) {
 								reaction.klass = 'reaction';
+								reaction.sourcePathway = pathway.pathwayId;
 								self.layout.addNode(reaction);});}
-						self.layout.positionNewNodes();
+						self.layout.createForce();
 						onFinish();},
 					{type: 'GET', data: {
 						mode: 'reactome_pathway_id',
 						id: pathway.pathwayId}});},
+
+			removePathway: function(pathway) {
+				this.pathways = this.pathways.filter(function(element) {
+					return element.id != pathway.id;});
+
+				console.log(pathway);
+				this.layout.removePathwayNodes(pathway.pathwayId);
+
+				this.onPathwaysChanged();},
 
 			setPathways: function(pathways, finish, viewNotes) {
 				var self = this;
@@ -120,7 +127,8 @@
 
 				self.layout.setPathways(self.pathways, function() {
 					self.renewDisplay();
-					self.updateSvgPosition();});},
+					self.updateSvgPosition();});
+				self.layout.force.alpha(0.3);},
 
 			addViewNotes: function(viewNotes) {
 				var i, layoutId, notes, view, self = this;
@@ -165,7 +173,6 @@
 
 			layoutFinish: function() {
 				if (!this.display || !this.display.layout || !this.display.layout.force) {return;}
-				this.onTick();
 				this.updateLegend();},
 
 			layoutSplit: function() {
@@ -247,7 +254,7 @@
 
 			updateSvgPosition: function() {
 				if (this.svg) {
-					this.svg.attr('width', this.w - this.legendWidth).attr('height', this.h);}
+					this.svg.attr('width', this.w - this.legendWidth || 1).attr('height', this.h);}
 				if (this.display) {this.display.size = [this.w - this.legendWidth, this.h];}
 				if (this.legend) {
 					this.legend
@@ -259,30 +266,6 @@
 
 			drawSelf: function(context, scale, args) {
 				$P.HtmlObject.prototype.drawSelf.call(this, context, scale, args);},
-
-			onTick: function() {
-				var self = this;
-
-				this.svg.selectAll('.node').attr('transform', function(d) {
-					return 'translate(' + d.x + ',' + d.y + ')';});
-
-				this.svg.selectAll('.follower').attr('transform', function(d) {
-					var follow = d3.select(this).attr('follow-id');
-					var node = self.layout.getNode(follow);
-					return 'translate(' + node.x + ',' + node.y + ')';});
-
-				// Undirected Links.
-				this.svg.selectAll('.link line')
-					.attr('x1', function(link) {return link.source.x;})
-					.attr('y1', function(link) {return link.source.y;})
-					.attr('x2', function(link) {return link.target.x;})
-					.attr('y2', function(link) {return link.target.y;});
-
-				this.svg.selectAll('.update-displays').each(function(d, i) {
-					if (d && d.displays) {
-						d.displays.forEach(function(display) {
-							display.update(self.layout);});}});
-			},
 
 			saveKeys: [
 				'legendWidth',

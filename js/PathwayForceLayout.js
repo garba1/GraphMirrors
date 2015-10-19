@@ -5,7 +5,21 @@
 		$P.ForceLayout,
 		function PathwayForceLayout(config) {
 			var self = this;
+			config = config || {};
+
 			$P.ForceLayout.call(this, config);
+
+			/** pathwayId -> [nodeLayoutId] */
+			this.pathwayNodes = $P.MultiMap();
+			/** entityLayoutId -> [reactionLayoutId] */
+			this.entityReactions = $P.MultiMap();
+			/** reactionLayoutId -> [entityLayoutId] */
+			this.reactionEntities = $P.MultiMap();
+			/** paperLayoutId -> [reactionLayoutId] */
+			this.paperReactions = $P.MultiMap();
+
+			this.gravity = config.gravity || 0.03;
+
 			this.reactionEdgeCount = 0;
 			this._mode = 'none';
 			this.drag = this.force.drag()
@@ -34,19 +48,26 @@
 				'#bc80bd',
 				'#ccebc5',
 				'#ffed6f'],
+
 			get mode() {return this._mode;},
 			set mode(value) {
 				if (value === this._mode) {return;}
 				this._mode = value;},
+
 			addNode: function(node, override) {
-				if (!$P.ForceLayout.prototype.addNode.call(this, node, override)) {return null;}
+				var exists = this.getNode(node.layoutId);
+				$P.ForceLayout.prototype.addNode.call(this, node, override);
+				if (node.sourcePathway) {
+					this.pathwayNodes.add(node.sourcePathway, node.layoutId);}
+				if (exists) {return exists;}
+
 				if ('entity' === node.klass) {this.onAddEntity(node);}
 				if ('reaction' === node.klass) {this.onAddReaction(node);}
+				if ('location' === node.klass) {this.onAddLocation(node);}
 				if ('paper' === node.klass) {this.onAddPaper(node);}
 				return node;},
-			onAddPaper: function(paper) {
 
-			},
+
 			onAddEntity: function(entity) {
 				var self = this, node, link;
 
@@ -60,117 +81,156 @@
 				entity.reactions = [];
 
 				// Add label.
-				node = this.addNode({
+				node = self.addNode({
 					name: entity.name,
 					id: entity.id,
 					klass: 'entitylabel',
 					charge: 0});
-				if (node) {
-					this.addLink({
-						source: entity, target: node,
-						id: entity.id,
-						klass: 'entity:label',
-						linkDistance: 5,
-						linkStrength: 1.0});}
+				self.addLink({
+					sourceId: entity.layoutId, targetId: node.layoutId,
+					id: entity.id,
+					klass: 'entity:label',
+					linkDistance: 5,
+					linkStrength: 2});
 
 				if (entity.location) {
-					// Ensure Location.
-					node = this.getNode('location:' + entity.location);
-					if (!node) {
-						node = {
-							name: entity.location,
-							id: entity.location,
-							klass: 'location',
-							entities: [],
-							color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
-							gravityMultiplier: 1.2,
-							charge: -90};
-						self.addNode(node);
+					self.addNode({
+						name: entity.location,
+						id: entity.location,
+						klass: 'location',
+						color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
+						gravityMultiplier: 1.2,
+						charge: -140});
+					self.addLink({
+						klass: 'entity->location',
+						sourceId: entity.layoutId,
+						targetId: 'location:' + entity.location,
+						linkDistance: 400,
+						linkStrength: 1});}},
 
-						// Inter-location links for positioning.
-						self.getNodes('location').forEach(function(location) {
-							if (node === location) {return;}
-							self.addLink({
-								source: location,
-								target: node,
-								linkDistance: 1000,
-								linkStrength: 0.02
-							});
-						});
-					}
-
-					node.entities.push(entity);
-
-					// Add link from location to entity.
-					link = {
-						source: entity, target: node,
-						id: entity.id,
-						klass: 'entity:location',
-						linkDistance: 40,
-						linkStrength: 0.6};
-					this.addLink(link);}},
 			onAddReaction: function(reaction) {
 				var self = this;
 				reaction.charge = -90;
-				if (reaction.entities) {
-					// Add links to entities.
-					$.each(reaction.entities, function(entityId, direction) {
-						var link;
-						var entity = self.getNode();
-						self.applyToNode('entity:' + entityId, function(entity) {
-							link = {
-								source: direction === 'input' ? entity : reaction,
-								target: direction === 'input' ? reaction : entity,
-								reaction: reaction,
-								entity: entity,
-								klass: 'reaction:entity',
-								linkDistance: 30,
-								linkStrength: 1,
-								id: self.reactionEdgeCount++};
-							self.addLink(link);
 
-							if (!entity.reactions) {entity.reactions = [];}
-							entity.reactions.push(reaction);
+				// Add links to the reaction's entities.
+				$.each(reaction.entities || {}, function(entityId, direction) {
+					entityId = 'entity:' + entityId;
+					var link = self.addLink({
+						sourceId: 'input' === direction ? entityId : reaction.layoutId,
+						targetId: 'output' === direction ? entityId : reaction.layoutId,
+						entity: entityId, reaction: reaction.layoutId,
+						klass: 'reaction:entity',
+						linkDistance: 30,
+						linkStrength: 1,
+						id: reaction.id + ':' + entityId});
 
-							// Mark as being an input or output.
-							if ('output' === direction) {entity.is_output = true;}
-							if ('input' === direction) {entity.is_input = true;}
-						});});}
-				if (reaction.papers) {
-					reaction.papers.forEach(function(paper_id) {
-						var node, link;
-						node = self.getNode('paper:' + paper_id);
-						if (!node) {
-							node = {
-								name: paper_id,
-								id: paper_id,
-								klass: 'paper',
-								charge: -50,
-								reactions: [reaction]};
-							self.addNode(node);}
-						else {
-							node.reactions.push(reaction);}
-						link = {
-							source: reaction,
-							target: node,
-							klass: 'reaction:paper',
-							linkDistance: 40,
-							linkStrength: 0.5,
-							id: self.reactionEdgeCount++};
-						self.addLink(link);
-					});}
-			},
+					self.entityReactions.add(entityId, reaction.layoutId);
+					self.reactionEntities.add(reaction.layoutId, entityId);});
+
+				// Add papers to the reaction's entities.
+				(reaction.papers || []).forEach(function(paperId) {
+					var paperLayoutId = 'paper:' + paperId;
+					var paper = self.getNode(paperId);
+					if (!paper) {
+						paper = self.addNode({
+							name: paperId,
+							id: paperId,
+							klass: 'paper',
+							charge: -50});}
+					self.addLink({
+						sourceId: reaction.layoutId,
+						targetId: paperLayoutId,
+						klass: 'reaction:paper',
+						linkDistance: 40,
+						linkStrength: 0.5,
+						id: reaction.id + ':' + paperId});
+					self.paperReactions.add(paperId, reaction.layoutId);});},
+
+			onAddLocation: function(location) {
+				var self = this;
+				self.getNodesInClass('location').forEach(function(location2) {
+					if (location === location2) {return;}
+					/*self.addLink({
+						sourceId: location.layoutId,
+						targetId: location2.layoutId,
+						linkDistance: 500,
+						linkStrength: 0.02});*/
+				});},
+
+			onAddPaper: function(paper) {},
+
+			removePathwayNodes: function(pathwayId) {
+				var self = this;
+				console.log('Removing pathway: ', pathwayId);
+				self.pathwayNodes.get(pathwayId).forEach(function(nodeLayoutId) {
+					console.log('  Removing node: ', nodeLayoutId);
+					self.removeNode(nodeLayoutId);});
+				self.pathwayNodes.clear(pathwayId);},
+
+			removeNode: function(layoutId) {
+				var node = this.getNode(layoutId);
+				if (!node) {return null;}
+				$P.ForceLayout.prototype.removeNode.call(this, layoutId);
+				if (this.getNode(layoutId)) {return null;}
+
+				if ('entity' === node.klass) {this.onRemoveEntity(node);}
+				if ('reaction' === node.klass) {this.onRemoveReaction(node);}
+				if ('location' === node.klass) {this.onRemoveLocation(node);}
+				if ('paper' === node.klass) {this.onRemovePaper(node);}
+
+				return node;},
+
+			onRemoveEntity: function(entity) {
+				// Remove Label.
+				this.removeNode('entitylabel:' + entity.id);
+				this.removeLink('entity:label:' + entity.id);
+				// Remove location ?
+				if (entity.location) {
+					this.removeNode('location:' + entity.location);
+					this.removeLink('entity:location:' + entity.location);}},
+
+			onRemoveReaction: function(reaction) {
+				var self = this;
+				// Remove reaction links.
+				$.each(reaction.entities || {}, function(entityId, direction) {
+					self.removeLink('reaction:entity:' + reaction.id + ':' +  entityId);
+					self.entityReactions.remove('entity:' + entityId, reaction.layoutId);
+					self.reactionEntities.remove(reaction.layoutId, 'entity:' + entityId);});
+				// Remove paper links.
+				(reaction.papers || []).forEach(function(paperId) {
+					self.removeNode('paper:' + paperId);
+					self.removeLink('reaction:paper:' + reaction.id + ':' +  paperId);
+					self.paperReactions.remove(paperId, reaction.layoutId);});},
+
+			onRemoveLocation: function(location) {
+				var self = this;
+				self.getNodesInClass('location').forEach(function(location2) {
+					self.removeLink(location.layoutId + '->' + location2.layoutId);
+					self.removeLink(location2.layoutId + '->' + location.layoutId);});},
+
+			onRemovePaper: function(paper) {},
+
+			nodeFilter: function(node) {
+				var self = this;
+				if (['entity', 'reaction'].indexOf(node.klass) == -1) {return true;}
+				var neighbors = self.getNeighbors(node.layoutId).filter(function(layoutId) {
+					var neighbor = self.getNode(layoutId);
+					if (!neighbor) {return false;}
+					return ['entity', 'reaction', 'paper'].indexOf(neighbor.klass) != -1;});
+				return neighbors.length > 1;},
+
 			setPathways: function(pathways, finish) {
-				this.getNodes('entity').forEach(function(entity) {
+				this.getNodesInClass('entity').forEach(function(entity) {
 					var count = 0;
 					pathways.forEach(function(pathway) {
 						if (entity.pathways[pathway.pathwayId]) {++count;}});
 					entity.crosstalkCount = count;
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 50);});
+				this.createForce();
 				if (finish) {finish();}},
 			consolidateComposite: function() {
 				var self = this;
-				self.getNodes('entity').forEach(function(entity) {
+				self.getNodesInClass('entity').forEach(function(entity) {
 					var components = [];
 					if (entity.components) {
 						$.each(entity.components, function(component_id, component_type) {
@@ -182,7 +242,7 @@
 				});},
 			consolidateReactions: function() {
 				var self = this,
-						reactions = this.getNodes('reaction'),
+						reactions = this.getNodesInClass('reaction'),
 						consolidated = $P.MultiMap();
 				function hash(reaction) {
 					var value = [];

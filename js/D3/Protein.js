@@ -40,8 +40,7 @@
 				.attr('width', this.size * 18)
 				.attr('height', this.size * 10)
 				.attr('rx', this.size * 4)
-				.attr('ry', this.size * 3)
-				.attr('transform', this.transform);
+				.attr('ry', this.size * 3);
 
 			if (config.collector) {
 				config.collector[config.datum.layoutId] = self;}
@@ -53,6 +52,9 @@
 
 			return this;},
 		{
+			update: function(layout) {
+				this.selection.attr('transform', 'translate('+this.x+','+this.y+')' + this.transform);},
+
 			get searchMatch() {return this._searchMatch;},
 			set searchMatch(value) {
 				if (value === this._searchMatch) {return;}

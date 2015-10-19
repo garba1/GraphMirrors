@@ -429,7 +429,7 @@
 							_this.dragOffset = {x: 0, y: 0};
 							_this.dragLeft = d3.event.sourceEvent.which == 1;})
 						.on('drag', function(d) {
-							if (!_this.dragLeft) {return;}
+							if (!_this.dragging || !_this.dragLeft) {return;}
 							_this.dragOffset.x += d3.event.dx;
 							_this.dragOffset.y += d3.event.dy;
 							_this.dragAbsolute = {x: d3.event.x, y: d3.event.y};
@@ -1404,6 +1404,7 @@
 									function click(d, i) {
 										var ringBubble;
 										if (d3.event.defaultPrevented) {return;} // Don't trigger on drag.
+										self.dragging = null;
 
 										if (i == 0 || d.children == undefined) {return;}
 										if (d.children.length == 0) {return;}

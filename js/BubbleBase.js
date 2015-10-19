@@ -10,9 +10,7 @@
 			if (!config.strokeStyle) {
 				config.strokeStyle = $P.BubbleBase.getUnusedColor();}
 			config.cornerRadius = config.cornerRadius || 20;
-			console.log(config.lineWidth);
 			if (undefined === config.lineWidth) {config.lineWidth = 12;}
-			console.log(config.lineWidth);
 
 			this.links = [];
 			this.neighbors = {left: null, right: null};

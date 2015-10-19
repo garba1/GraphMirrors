@@ -22,7 +22,7 @@
 			if (!self.layout) {
 				console.error('ForceView('+config+'): missing layout');
 				return;}
-			self.layout.registerTickListener(self.onTick.bind(self));
+			self.layout.registerDisplayListener(self.updateLayoutDisplay.bind(self));
 
 			self.shape = config.shape;
 			if (!self.shape) {
@@ -42,7 +42,7 @@
 				.attr('class', 'background')
 				.attr('fill', 'none')
 				.attr('stroke', 'none')
-				.attr('pointer-events', 'all')
+				.attr('pointer-events', 'visibleFill')
 				.style('cursor', 'inherit')
 				.call(self.zoom)
 				.on('mousemove', function() {
@@ -66,20 +66,34 @@
 													this.shape.transform(this)
 													+ 'translate(' + this.zoom.translate() + ')'
 													+ 'scale(' + this.zoom.scale() + ')');
-				this.onTick();},
-			onTick: function() {
-				this.element.selectAll('.node')
+				this.updateLayoutDisplay();},
+
+			updateLayoutDisplay: function() {
+				var self = this;
+
+				self.element.selectAll('.node')
 					.attr('transform', function(d, i) {
 						return 'translate(' + d.x + ',' + d.y + ')';});
 
-				this.element.selectAll('.link line')
+				self.svg.selectAll('.follower').attr('transform', function(d) {
+					var follow = d3.select(this).attr('follow-id');
+					var node = self.layout.getNode(follow);
+					return 'translate(' + node.x + ',' + node.y + ')';});
+
+				self.element.selectAll('.link line')
 					.attr('x1', function (link) {return link.source.x;})
 					.attr('y1', function(link) {return link.source.y;})
 					.attr('x2', function(link) {return link.target.x;})
 					.attr('y2', function(link) {return link.target.y;});
 
-				this.element.selectAll('*').each(function(d, i) {
-					if (this.onTick) {this.onTick(d, i);}});},
+				// XXX fix to use display
+				self.element.selectAll('*').each(function(d, i) {
+					if (self.onTick) {self.onTick(d, i);}});
+
+				self.element.selectAll('.update-displays').each(function(d, i) {
+					if (d && d.displays) {
+						d.displays.forEach(function(display) {
+							display.update(self.layout);});}});},
 
 			delete: function() {
 				this.element.remove();

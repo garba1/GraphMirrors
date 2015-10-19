@@ -20,6 +20,13 @@
 				config.h -= 16;
 				config.parent = this;
 				config.url = this.url;
+
+				// Errors if off screen, so zoom to right.
+				var bubbleRight = config.x + config.w + 8;
+				var screenRight = $P.state.scrollX + $P.state.mainCanvas.getWidth();
+				if (bubbleRight > screenRight) {
+					$P.state.navCanvas.scrollTo($P.state.scrollX + bubbleRight - screenRight);}
+
 				this.iframe = new $P.IFrame(config);},
 
 			saveKeys: [].concat($P.Bubble.prototype.saveKeys, ['url'])

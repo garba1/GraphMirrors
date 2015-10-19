@@ -48,7 +48,7 @@
 							if (0 !== force.alpha()) {
 								force.stop();}
 							else {
-								force.resume();}
+								force.alpha(0.05);}
 						});},
 					base,
 					'translate', 'scale', 'size', 'center');
@@ -94,7 +94,7 @@
 				var force = layout.force,
 						alpha = force.alpha(),
 						gravity = 0.03 * alpha;
-				layout.nodes.forEach(function(node) {
+				layout.nodeList.forEach(function(node) {
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
 					node.x += -node.x * power;
@@ -143,7 +143,7 @@
 						alpha = force.alpha(),
 						size = force.size(),
 						gravity = 0.03 * alpha;
-				layout.nodes.forEach(function(node) {
+				layout.nodeList.forEach(function(node) {
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
 					node.x += -node.x * power;
@@ -204,7 +204,7 @@
 						alpha = force.alpha(),
 						size = force.size(),
 						gravity = 0.03 * alpha;
-				layout.nodes.forEach(function(node) {
+				layout.nodeList.forEach(function(node) {
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
 					/*

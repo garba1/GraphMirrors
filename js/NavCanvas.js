@@ -30,12 +30,12 @@ $P.NavCanvas = $P.defineClass(
 				this.lastX = x;
 				this.lastY = y;}},
 		mousemove: function(event, x, y) {
-			var dx;
 			if ('dragview' !== this.state) {return;}
-			dx = (x - this.lastX) / this.scale;
-			$P.state.scrollX += dx;
+			this.scrollTo($P.state.scrollX + (x - this.lastX) / this.scale);
+			this.lastX = x;},
+		scrollTo: function(x) {
+			$P.state.scrollX = x;
 			if ($P.state.scrollX < 0) {$P.state.scrollX = 0;}
-			this.lastX = x;
 			this.viewbox.updatePosition();
 			$P.state.markDirty();},
 		mouseup: function(event, x, y) {

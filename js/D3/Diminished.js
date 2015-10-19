@@ -18,6 +18,7 @@
 				if (self[key] instanceof Function) {
 					self[key] = self[key].call(config.parent, config.datum, config.index);}}
 
+			set('transform', '');
 			set('stroke', 'black');
 			set('fill', 'gray');
 			set('highlight', 'cyan');
@@ -46,6 +47,9 @@
 
 			return this;},
 		{
+			update: function(layout) {
+				this.selection.attr('transform', 'translate('+this.x+','+this.y+')' + this.transform);},
+
 			get highlighted() {return this._highlighted;},
 			set highlighted(value) {
 				if (value === this._highlighted) {return;}

@@ -44,24 +44,28 @@
 
 			function entityFilter1(node) {
 				if ('entity' !== node.klass) {return false;}
-				if (node.reactions && node.reactions.length > 0) {return true;}
-				if (node.componentNodes && $P.or(node.componentNodes, entityFilter1)) {return true;}
+				if (self.layout.entityReactions.get(node.layoutId).length > 0) {return true;}
+				//if (node.componentNodes && $P.or(node.componentNodes, entityFilter1)) {return true;}
 				return false;}
 
 			function entityFilter2(node) {
-				var i, j, reaction, entities, entity;
-				if (node.reactions) {
-					for (i = 0; i < node.reactions.length; ++i) {
-						reaction = node.reactions[i];
-						entities = Object.keys(reaction.entities);
+				var i, j;
+				var reactions = self.layout.entityReactions.get(node.layoutId);
+				for (i = 0; i < reactions.length; ++i) {
+					var reaction = self.layout.getNode(reactions[i]);
+					var entities = Object.keys(reaction.entities).map(function(id) {return self.layout.getNode(id);});
 						for (j = 0; j < entities.length; ++j) {
-							entity = self.visibleEntities1.indexed['entity:'+entities[j]];
-							if (entity && self.inPathway(entity)) {return true;}}}}
-				if (!node.pathways || node.pathways[parseInt(self.pathway.id)]) {return true;}
+							var entity = self.visibleEntities1.indexed['entity:'+entities[j]];
+							if (entity && self.inPathway(entity)) {return true;}}}
+				if (self.inPathway(node)) {return true;}
 				return false;}
 
 			function diminishedEntityFilter(node) {
-				return !self.visibleEntities.indexed[node.layoutId];}
+				var reactions = self.layout.entityReactions.get(node.layoutId);
+				var count = 0;
+				reactions.forEach(function(reactionLayoutId) {
+					if (self.visibleReactions.indexed[reactionLayoutId]) {count++;}});
+				return !self.visibleEntities.indexed[node.layoutId] && count > 0;}
 
 			function entitylabelFilter(node) {
 				if ('entitylabel' !== node.klass) {return false;}
@@ -70,11 +74,12 @@
 			function reactionFilter(node) {
 				var i, entities;
 				if ('reaction' !== node.klass) {return false;}
-				entities = Object.keys(node.entities);
+				entities = self.layout.reactionEntities.get(node.layoutId);
+				var count = 0;
 				for (i = 0; i < entities.length; ++i) {
-					if (self.visibleEntities1.indexed['entity:'+entities[i]]) {
-						return true;}}
-				return false;}
+					if (self.visibleEntities1.indexed[entities[i]]) {
+						count++;}}
+				return count > 0;}
 
 			function locationFilter(node) {
 				if ('location' !== node.klass) {return false;}
@@ -83,13 +88,14 @@
 			function paperFilter(node) {
 				var i;
 				if ('paper' !== node.klass) {return false;}
-				for (i = 0; i < node.reactions.length; ++i) {
-					if (self.visibleReactions.indexed[node.reactions[i].layoutId]) {return true;}}
+				var reactions = self.layout.paperReactions.get(node.layoutId);
+				for (i = 0; i < reactions.length; ++i) {
+					if (self.visibleReactions.indexed[reactions[i]]) {return true;}}
 				return false;}
 
 			function isNodeVisible(node) {
 				if (!node) {return false;}
-				var id = node.layoutId;
+				var id = 'object' === typeof node && node.layoutId || node;
 				return self.visibleEntities.indexed[id]
 					|| self.visibleEntitylabels.indexed[id]
 					|| self.visibleReactions.indexed[id]
@@ -97,23 +103,23 @@
 					|| self.diminishedEntities.indexed[id]
 					|| self.visiblePapers.indexed[id];}
 
-			self.visibleEntities1 = self.layout.nodes.filter(entityFilter1);
+			self.visibleEntities1 = self.layout.nodeList.filter(entityFilter1);
 			self.visibleEntities1.indexed = $P.indexBy(self.visibleEntities1, $P.getter('layoutId'));
-			self.visibleReactions = self.layout.nodes.filter(reactionFilter);
+			self.visibleReactions = self.layout.nodeList.filter(reactionFilter);
 			self.visibleReactions.indexed = $P.indexBy(self.visibleReactions, $P.getter('layoutId'));
 			self.visibleEntities = self.visibleEntities1.filter(entityFilter2);
 			self.visibleEntities.indexed = $P.indexBy(self.visibleEntities, $P.getter('layoutId'));
 			self.diminishedEntities = self.visibleEntities1.filter(diminishedEntityFilter);
 			self.diminishedEntities.indexed = $P.indexBy(self.diminishedEntities, $P.getter('layoutId'));
-			self.visibleEntitylabels = self.layout.nodes.filter(entitylabelFilter);
+			self.visibleEntitylabels = self.layout.nodeList.filter(entitylabelFilter);
 			self.visibleEntitylabels.indexed = $P.indexBy(self.visibleEntitylabels, $P.getter('layoutId'));
-			self.visibleLocations = self.layout.nodes.filter(locationFilter);
+			self.visibleLocations = self.layout.nodeList.filter(locationFilter);
 			self.visibleLocations.indexed = $P.indexBy(self.visibleLocations, $P.getter('layoutId'));
-			self.visiblePapers = self.layout.nodes.filter(paperFilter);
+			self.visiblePapers = self.layout.nodeList.filter(paperFilter);
 			self.visiblePapers.indexed = $P.indexBy(self.visiblePapers, $P.getter('layoutId'));
 			self.visibleNodes = [].concat(self.visibleEntities, self.visibleEntitylabels, self.visibleReactions, self.visibleLocations, self.visiblePapers, self.diminishedEntities);
 
-			self.visibleLinks = self.layout.links.filter(function(link) {
+			self.visibleLinks = self.layout.linkList.filter(function(link) {
 				//if (link.klass === 'entity:label') {console.log(link, link.source, link.target, isNodeVisible(link.source),  isNodeVisible(link.target));}
 				return link.source && link.target && isNodeVisible(link.source) && isNodeVisible(link.target);});
 
@@ -170,7 +176,7 @@
 				.attr('stroke-width', 1);
 			 */
 			self.locationLinks = self.links.filter(
-				function(d, i) {return 'entity:location' === d.klass;});
+				function(d, i) {return 'entity->location' === d.klass;});
 			self.locationLinks.append('line')
 				.attr('stroke', 'black')
 				.attr('stroke-width', 0.5)
@@ -297,6 +303,7 @@
 			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.type;});
 			self.reactions.standard
 				.each($P.D3.Reaction.appender({
+					transform: self.textTransform,
 					size: nodeSize(14)}))
 				.selectAll('.reaction')
 				.attr('pointer-events', 'all')
@@ -312,6 +319,7 @@
 				.append('title').text(nodeTitle);
 			self.reactions.phosphorylated
 				.each($P.D3.Reaction.appender({
+					transform: self.textTransform,
 					size: nodeSize(14),
 					fill: 'blue'}))
 				.selectAll('.reaction')
@@ -416,10 +424,11 @@
 			// The main circle.
 			self.entities.diminished
 				.each($P.D3.Diminished.appender({
+					transform: self.textTransform,
 					size: nodeSize(14)}))
 				.selectAll('.diminished-entity')
 				.attr('pointer-events', 'all')
-				.attr('transform', textTransform)
+				.attr('transform', self.textTransform)
 				.on('click', function(d) {
 					$P.state.scene.record({
 						type: 'force-click',
@@ -434,7 +443,7 @@
 			self.entities.proteins.objects = {};
 			self.entities.proteins
 				.each($P.D3.Protein.appender({
-					transform: textTransform,
+					transform: self.textTransform,
 					size: nodeSize(14),
 					fill: self.getExpressionColor.bind(self),
 					collector: self.entities.proteins.objects}))
@@ -474,7 +483,7 @@
 			self.entities.small.objects = {};
 			self.entities.small
 				.each($P.D3.Small.appender({
-					transform: textTransform,
+					transform: self.textTransform,
 					size: nodeSize(14),
 					fill: self.getExpressionColor.bind(self),
 					collector: self.entities.small.objects}))
@@ -497,7 +506,7 @@
 				.attr('fill', self.getExpressionColor.bind(self))
 				.attr('width', nodeSize(10)).attr('height', nodeSize(10))
 				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
-				.attr('transform', textTransform + 'rotate(45)')
+				.attr('transform', self.textTransform + 'rotate(45)')
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {
 					$P.state.scene.record({
@@ -536,7 +545,7 @@
 				.attr('fill', self.getExpressionColor.bind(self))
 				.attr('width', nodeSize(10)).attr('height', nodeSize(10))
 				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
-				.attr('transform', textTransform)
+				.attr('transform', self.textTransform)
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {
 					$P.state.scene.record({
@@ -589,12 +598,14 @@
 				self.root.each($P.D3.PathwayLabel.appender(
 					{text: self.pathway.name,
 					 fill: self.pathway.color,
+					 pathway: self.pathway,
 					 view: self},
 					function(label) {self.label = label;}));}
 			else if (self.pathways) {
 				var data = self.pathways.map(function(pathway) {
 					return {
 						name: pathway.name,
+						pathwayId: pathway.pathwayId,
 						color: pathway.color};});
 				self.labels = self.root.selectAll('.pathway-label').data(data).enter().append('g')
 					.each($P.D3.PathwayLabel.appender(
@@ -603,6 +614,7 @@
 							view: self,
 							text: d.name,
 							fill: d.color,
+							pathway: d,
 							index: i};}));}
 
 			// build selections of all follower nodes for a given node.s
@@ -713,6 +725,9 @@
 				var self = this,
 						selection, follow, key;
 
+				if ('string' === typeof node) {
+					node = self.layout.getNode(node);}
+
 				if (element) {
 					selection = d3.select(element);
 					node = node || selection.datum();
@@ -724,6 +739,13 @@
 					return self.isNodeVisible(self.layout.getNode('entity:' + node.id));}
 
 				if (self.display.collapsedLocations[node.location]) {return false;}
+
+				// Hide reactions if all related are hidden.
+				if ('reaction' === node.klass) {
+					var count = 0;
+					self.layout.reactionEntities.get(node.layoutId).forEach(function(entityId) {
+						if (self.isNodeVisible(self.layout.getNode(entityId))) {count++;}});
+					if (0 === count) {return false;}}
 
 				if ('location' === node.klass) {key = 'location';}
 				else if ('reaction' === node.klass) {key = 'reaction';}
@@ -853,15 +875,20 @@
 					self.updateLinks(self.reactionLinks);}
 				else {
 					if ('diminished' === nodeType) {
-						self.updateNodes(self.entities.diminished);}
+						self.updateNodes(self.entities.diminished);
+						self.updateNodes(self.reactions);}
 					else if ('protein' === nodeType) {
-						self.updateNodes(self.entities.proteins);}
+						self.updateNodes(self.entities.proteins);
+						self.updateNodes(self.reactions);}
 					else if ('small' === nodeType) {
-						self.updateNodes(self.entities.small);}
+						self.updateNodes(self.entities.small);
+						self.updateNodes(self.reactions);}
 					else if ('complex' === nodeType) {
-						self.updateNodes(self.entities.complex);}
+						self.updateNodes(self.entities.complex);
+						self.updateNodes(self.reactions);}
 					else if ('other' === nodeType) {
-						self.updateNodes(self.entities.other);}
+						self.updateNodes(self.entities.other);
+						self.updateNodes(self.reactions);}
 					self.updateNodes(self.entityLabels);
 					self.updateLinks(self.reactionLinks);
 					self.updateLinks(self.entityLabelLinks);
@@ -926,22 +953,29 @@
 			x: leftX + 99,
 			y: y}));
 
-		y += 24;
+		y += 30;
 		checkbox('small', y);
 
 		legend.append('text')
-			.style('font-size', '14px')
+			.style('font-size', '12px')
 			.attr('x', textX)
-			.attr('y', y)
+			.attr('y', y - 8)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')
-			.text('Small');
+			.text('  Small  ');
+		legend.append('text')
+			.style('font-size', '12px')
+			.attr('x', textX)
+			.attr('y', y + 8)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Molecule');
 
 		legend.each($P.D3.Small.appender({
 			x: leftX + 99,
 			y: y}));
 
-		y += 24;
+		y += 28;
 		checkbox('complex', y);
 
 		legend.append('text')

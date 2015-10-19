@@ -79,12 +79,6 @@ $P.or = function(array, f) {
 $P.isHtmlElementVisible = function(element) {
 	return 'none' !== element.style.display && 'hidden' !== element.style.visibility;};
 
-$P.removeFromList = function(list, element) {
-	while (true) {
-		var index = list.indexOf(element);
-		if (-1 == index) {return;}
-		list.splice(index, 1);}};
-
 $P.randomFromList = function(list) {
 	return list[Math.floor(Math.random() * list.length)];};
 
@@ -230,6 +224,10 @@ $P.asyncOrdered = function(callbacks) {
 				return value;},
 			add: function(key, value) {
 				this.get(key).push(value);},
+			remove: function(key, value) {
+				$P.removeFromList(this.get(key), value);},
+			clear: function(key) {
+				this.data[key] = [];},
 			// takes key, values array.
 			forEach: function(f) {$.each(this.data, f);}
 		});
@@ -263,6 +261,9 @@ $P.asyncOrdered = function(callbacks) {
 				});}
 		});
 
+	////////////////////////////////////////////////////////////////
+	// List Operations
+
 	/**
 	 * Turn a list into a map indexed by f.
 	 */
@@ -273,6 +274,21 @@ $P.asyncOrdered = function(callbacks) {
 			if (map[key]) {console.error('EXISTING KEY', map[key], element);}
 			map[key] = element;});
 		return map;};
+
+	$P.removeFromList = function(list, element) {
+		while (true) {
+			var index = list.indexOf(element);
+			if (-1 == index) {return;}
+			list.splice(index, 1);}};
+
+	$P.listEqual = function(a, b) {
+		if (a === b) {return true;}
+		if (null == a || null == b) {return false;}
+		if (a.length !== b.length) {return false;}
+
+		for (var i = 0; i < a.length; ++i) {
+			if (a[i] !== b[i]) {return false;}}
+		return true;};
 
 	// Creates a list from an object's values.
 	$P.values = function(object) {
