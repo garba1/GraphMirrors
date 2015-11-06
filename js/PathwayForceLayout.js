@@ -18,20 +18,21 @@
 			/** paperLayoutId -> [reactionLayoutId] */
 			this.paperReactions = $P.MultiMap();
 
-			this.gravity = config.gravity || 0.03;
+			this.gravity = config.gravity || 0.07;
 
 			this.reactionEdgeCount = 0;
 			this._mode = 'none';
 			this.drag = this.force.drag()
-				.on('dragstart', function() {
+				.on('dragstart.pathway', function() {
 					d3.event.sourceEvent.stopPropagation();})
-				.on('drag.force', function(d) {
+				.on('drag.pathway', function(d) {
 					d.px = d3.event.x;
 					d.py = d3.event.y;
+					d.stuck = 0.0;
 					self.force.alpha(0.05);
-					self.force.tick();
-					//self.force.alpha(0);
-				});
+					self.force.tick();})
+				.on('dragend.pathway', function(d) {
+					d.stuck = 1.0;});
 			this.nextLocationColor = 0;
 		},
 		{
@@ -78,14 +79,13 @@
 					return target * size;}
 
 				entity.charge = nodeSize(-200, entity);
-				entity.reactions = [];
 
 				// Add label.
 				node = self.addNode({
 					name: entity.name,
 					id: entity.id,
 					klass: 'entitylabel',
-					charge: 0});
+					charge: -1});
 				self.addLink({
 					sourceId: entity.layoutId, targetId: node.layoutId,
 					id: entity.id,
@@ -100,12 +100,12 @@
 						klass: 'location',
 						color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
 						gravityMultiplier: 1.2,
-						charge: -140});
+						charge: -70});
 					self.addLink({
 						klass: 'entity->location',
 						sourceId: entity.layoutId,
 						targetId: 'location:' + entity.location,
-						linkDistance: 400,
+						linkDistance: 260,
 						linkStrength: 1});}},
 
 			onAddReaction: function(reaction) {
@@ -210,6 +210,7 @@
 
 			onRemovePaper: function(paper) {},
 
+			/*
 			nodeFilter: function(node) {
 				var self = this;
 				if (['entity', 'reaction'].indexOf(node.klass) == -1) {return true;}
@@ -218,6 +219,7 @@
 					if (!neighbor) {return false;}
 					return ['entity', 'reaction', 'paper'].indexOf(neighbor.klass) != -1;});
 				return neighbors.length > 1;},
+			 */
 
 			setPathways: function(pathways, finish) {
 				this.getNodesInClass('entity').forEach(function(entity) {
@@ -225,7 +227,7 @@
 					pathways.forEach(function(pathway) {
 						if (entity.pathways[pathway.pathwayId]) {++count;}});
 					entity.crosstalkCount = count;
-					entity.gravityMultiplier = Math.max(1, (count - 1) * 50);});
+					entity.gravityMultiplier = Math.max(1, (count - 1) * 3);});
 				this.createForce();
 				if (finish) {finish();}},
 			consolidateComposite: function() {
@@ -263,6 +265,7 @@
 				var data = {};
 
 				function f(node, jumpsLeft) {
+					if (undefined === node) {return;}
 					if (undefined !== data[node.layoutId] && jumpsLeft <= data[node.layoutId]) {return;}
 
 					data[node.layoutId] = jumpsLeft;
@@ -270,11 +273,11 @@
 					if (jumpsLeft <= 0) {return;}
 
 					if ('entity' === node.klass) {
-						node.reactions.forEach(function(reaction) {
+						self.entityReactions.get(node.layoutId).forEach(function(reaction) {
 							f(reaction, jumpsLeft - 1);});}
 
 					else if ('reaction' === node.klass) {
-						Object.keys(node.entities).forEach(function(entityId) {
+						self.reactionEntities.get(node.layoutId).forEach(function(entityId) {
 							f(self.getNode('entity:' + entityId), jumpsLeft - 1);});}
 				}
 

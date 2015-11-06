@@ -45,7 +45,7 @@
 						base(g);
 						g.on('dblclick.zoom', function() {
 							var force = view.layout.force;
-							if (0 !== force.alpha()) {
+							if (force.alpha() > 0) {
 								force.stop();}
 							else {
 								force.alpha(0.05);}
@@ -93,12 +93,13 @@
 				if ('display' === argument) {return;}
 				var force = layout.force,
 						alpha = force.alpha(),
-						gravity = 0.03 * alpha;
-				layout.nodeList.forEach(function(node) {
-					var power = gravity;
-					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
-					node.x += -node.x * power;
-					node.y += -node.y * power;});},
+						gravity = layout.gravity * alpha;
+				if (alpha > 0) {
+					layout.nodeList.forEach(function(node) {
+						var power = gravity;
+						if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
+						node.x += -node.x * power;
+						node.y += -node.y * power;});}},
 			updateClip: function(view) {
 				view.clip.selectAll('*').remove();
 				view.clip.append('rect')
@@ -142,7 +143,7 @@
 				var force = layout.force,
 						alpha = force.alpha(),
 						size = force.size(),
-						gravity = 0.03 * alpha;
+						gravity = layout.gravity * alpha;
 				layout.nodeList.forEach(function(node) {
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}
@@ -203,7 +204,7 @@
 				var force = layout.force,
 						alpha = force.alpha(),
 						size = force.size(),
-						gravity = 0.03 * alpha;
+						gravity = layout.gravity * alpha;
 				layout.nodeList.forEach(function(node) {
 					var power = gravity;
 					if (node.gravityMultiplier) {power *= node.gravityMultiplier;}

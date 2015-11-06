@@ -10,7 +10,7 @@
 
 			$P.ForceView.call(self, config);
 
-			self.hiddenNodeTypes = {};
+			self.hiddenNodeTypes = {paper: true, small: true};
 			self.highlights = {};
 			self.notes = {};
 
@@ -44,23 +44,25 @@
 
 			function entityFilter1(node) {
 				if ('entity' !== node.klass) {return false;}
-				if (self.layout.entityReactions.get(node.layoutId).length > 0) {return true;}
+				return true;
+				//if (self.layout.entityReactions.get(node.layoutId).length > 0) {return true;}
 				//if (node.componentNodes && $P.or(node.componentNodes, entityFilter1)) {return true;}
 				return false;}
 
 			function entityFilter2(node) {
 				var i, j;
-				var reactions = self.layout.entityReactions.get(node.layoutId);
-				for (i = 0; i < reactions.length; ++i) {
-					var reaction = self.layout.getNode(reactions[i]);
-					var entities = Object.keys(reaction.entities).map(function(id) {return self.layout.getNode(id);});
-						for (j = 0; j < entities.length; ++j) {
-							var entity = self.visibleEntities1.indexed['entity:'+entities[j]];
-							if (entity && self.inPathway(entity)) {return true;}}}
+				//var reactions = self.layout.entityReactions.get(node.layoutId);
+				//for (i = 0; i < reactions.length; ++i) {
+				//	var reaction = self.layout.getNode(reactions[i]);
+				//	var entities = Object.keys(reaction.entities).map(function(id) {return self.layout.getNode(id);});
+				//		for (j = 0; j < entities.length; ++j) {
+				//			var entity = self.visibleEntities1.indexed['entity:'+entities[j]];
+				//			if (entity && self.inPathway(entity)) {return true;}}}
 				if (self.inPathway(node)) {return true;}
 				return false;}
 
 			function diminishedEntityFilter(node) {
+				return !entityFilter2(node);
 				var reactions = self.layout.entityReactions.get(node.layoutId);
 				var count = 0;
 				reactions.forEach(function(reactionLayoutId) {
@@ -74,6 +76,7 @@
 			function reactionFilter(node) {
 				var i, entities;
 				if ('reaction' !== node.klass) {return false;}
+				return true;
 				entities = self.layout.reactionEntities.get(node.layoutId);
 				var count = 0;
 				for (i = 0; i < entities.length; ++i) {
@@ -88,9 +91,10 @@
 			function paperFilter(node) {
 				var i;
 				if ('paper' !== node.klass) {return false;}
-				var reactions = self.layout.paperReactions.get(node.layoutId);
-				for (i = 0; i < reactions.length; ++i) {
-					if (self.visibleReactions.indexed[reactions[i]]) {return true;}}
+				return true;
+				//var reactions = self.layout.paperReactions.get(node.layoutId);
+				//for (i = 0; i < reactions.length; ++i) {
+				//	if (self.visibleReactions.indexed[reactions[i]]) {return true;}}
 				return false;}
 
 			function isNodeVisible(node) {
@@ -359,9 +363,9 @@
 					return 'Complex' !== d.type
 						&& 'SmallMolecule' !== d.type
 						&& 'Protein' !== d.type && 'protein' !== d.type;});
-			// The big transparent background circles encoding location.
 			self.entities.other.composite = self.entities.other.filter(
 				function(d, i) {return d.componentNodes;});
+			// The big transparent background circles encoding location.
 			self.entities.proteins.each(function(d, i) {
 				var location = self.layout.getNode('location:'+d.location);
 				if (location) {
@@ -635,12 +639,14 @@
 				self.highlights = self.layout.getAdjacentNodes(d, 3);
 				self.updateNodes(self.nodes);
 				self.updateLinks(self.links);
-				self.layout.updateDisplay();}
+				//self.layout.updateDisplay();
+			}
 			function unhighlight(d, i) {
 				self.highlights = {};
 				self.updateNodes(self.nodes);
 				self.updateLinks(self.links);
-				self.layout.updateDisplay();}
+				//self.layout.updateDisplay();
+			}
 
 			self.reactions //.selectAll('*')
 				.on('mouseover', highlight)
@@ -655,17 +661,13 @@
 			inPathway: function(node) {
 				if (!this.pathway && !this.pathways) {return true;}
 
-				if ('entity' === node.klass) {
+				if ('entity' === node.klass || 'reaction' === node.klass) {
 					if (!node.pathways) {return true;}
 					function check(pathway) {
 						return node.pathways[parseInt(pathway.id)];}
 					if (this.pathway && check(this.pathway)) {return true;}
 					if (this.pathways && this.pathways.some(check)) {return true;}
 					return false;}
-
-				else if ('reaction' === node.klass) {
-					// TODE implement
-					return true;}
 
 				return false;},
 
@@ -734,6 +736,8 @@
 					follow = selection.attr('follow-id');
 					if (follow) {
 						return self.isNodeVisible(self.layout.getNode(follow));}}
+
+				if (undefined === node) {return false;}
 
 				if ('entitylabel' === node.klass) {
 					return self.isNodeVisible(self.layout.getNode('entity:' + node.id));}
@@ -811,7 +815,9 @@
 								display.highlighted = highlights + 1;});}}
 
 					if ('location' === d.klass) {
-						selection.attr('stroke-width', self.display.collapsedLocations[d.id] ? 5 : 1);}});},
+						selection.attr('stroke-width', self.display.collapsedLocations[d.id] ? 5 : 1);}});
+
+			},
 
 			updateLinks: function(selection) {
 				var self = this;
@@ -866,6 +872,9 @@
 				if (self.hiddenNodeTypes[nodeType] == hidden) {return;}
 				self.hiddenNodeTypes[nodeType] = hidden;
 
+				// Force update.
+				self.lastUpdateCompleted = Date.now();
+
 				if ('paper' === nodeType) {
 					self.updateNodes(self.papers);
 					self.updateLinks(self.paperLinks);}
@@ -894,7 +903,8 @@
 					self.updateLinks(self.entityLabelLinks);
 					self.updateLinks(self.locationLinks);}
 
-				self.updateNodes(self.followerNodes);},
+				self.updateNodes(self.followerNodes);
+			},
 
 			rightclickNote: function(selection) {
 				var self = this;
@@ -931,10 +941,12 @@
 		var checkboxes = {};
 
 		function checkbox(id, y) {
+			var state = true;
+			if (id == 'paper' || id == 'small') {state = false;}
 			checkboxes[id] = new $P.D3.Checkbox({
 				parentSelection: legend,
 				x: leftX + 3, y: y - 1,
-				state: true,
+				state: state,
 				callback: function(state) {
 					callback(id, state);}
 			});}
@@ -1078,7 +1090,7 @@
 		y += 24;
 		legend.append('text')
 			.style('font-size', '14px')
-			.attr('x', textX)
+			.attr('x', leftX)
 			.attr('y', y)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')

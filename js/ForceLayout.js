@@ -19,10 +19,6 @@
 			/** nodeLayoutId -> [linkLayoutId] */
 			this.nodeLinks = $P.MultiMap();
 
-			/** how many ticks per display */
-			this.ticksPerDisplay = config.ticksPerDisplay || 3;
-			this.ticksSinceDisplay = this.ticksPerDisplay;
-
 			/** Actual list of nodes used by the force layout. */
 			this.nodeList = null;
 			/** Actual list of links used by the force layout. */
@@ -35,7 +31,16 @@
 			if (config.links) {this.addLinks(config.links, true);}
 
 			this.tickListeners = config.tickListeners || [];
-			this.displayListeners = config.displayListeners || [];
+
+			/** timestamp for last change to the layout. */
+			this.lastChanged = Date.now();
+
+			/**
+			 * Listeners for any kind of change to the layout. Called by
+			 * listener(this, this.lastChanged) whenever the timestamp is
+			 * updated.
+			 */
+			this.listeners = config.listeners || [];
 
 			this.shape = config.shape || null;
 		},
@@ -53,10 +58,13 @@
 			createForce: function() {
 				var self = this;
 
+				// Stop previous force if it exists.
+				if (self._force) {self._force.stop();}
+
 				// Create node list.
 				self.nodeList = [];
 				$.each(self.nodes, function(layoutId, node) {
-					if (self.nodeFilter(node)) {
+					if (!self.nodeFilter || self.nodeFilter(node)) {
 						self.nodeList.push(node);}});
 
 				if (self.onNodesCreated) {self.onNodesCreated();}
@@ -110,7 +118,14 @@
 						if (link.linkDistance) {return link.linkDistance;}
 						return 50;});
 				self._force.start();
-				self._force.alpha(0);},
+				self._force.alpha(0);
+
+				var stop = self._force.stop;
+				self._force.stop = function() {
+					stop.call(this);
+					self.onForceStop();};
+
+				self.markChanged();},
 
 			// The [width, height] of the force layout.
 			get size() {return this._size;},
@@ -234,23 +249,51 @@
 					if (self.getNode(other)) {neighbors.push(other);}});
 				return neighbors;},
 
-			onTick: function() {
-				//this.ticksSinceDisplay++;
-				//if (this.ticksSinceDisplay < this.ticksPerDisplay) {return;}
-				//this.ticksSinceDisplay = 0;
-
+			/**
+			 * Mark that the layout has changed and notify listeners.
+			 */
+			markChanged: function() {
 				var self = this;
-				if (this.force.alpha() < 0.03) {this.force.alpha(0);}
-				if (this.shape) {this.shape.onTick(this, self.tickArgument);}
-				this.tickListeners.forEach(function(listener) {listener(self, self.tickArgument);});
-				this.updateDisplay();},
+				self.lastChanged = Date.now();
+				self.listeners.forEach(function(listener) {listener(self, self.lastChanged);});},
+
+			onTick: function() {
+				var self = this;
+				self.stretchLinks();
+				if (self.force.alpha() < 0.02) {
+					self.force.stop();
+					self.markChanged();
+					return;}
+
+				// Stuck nodes
+				self.nodeList.forEach(function(node) {
+					if (!node.px2) {node.px2 = node.x;}
+					if (!node.py2) {node.py2 = node.x;}
+					if (node.stuck <= 0 || !node.stuck) {return;}
+					var inv_stuck = 1 - node.stuck;
+					node.x = node.stuck * node.px2 + inv_stuck * node.x;
+					node.y = node.stuck * node.py2 + inv_stuck * node.y;});
+
+				self.nodeList.forEach(function(node) {
+					node.px2 = node.x;
+					node.py2 = node.y;
+					if (node.stuck > 0) {
+						node.stuck -= 0.001;}});
+
+				if (self.shape) {self.shape.onTick(self, self.tickArgument);}
+				self.tickListeners.forEach(function(listener) {listener(self, self.tickArgument);});
+				self.markChanged();},
+
+			onForceStop: function() {
+				var self = this;
+				//self.nodeList.forEach(function(node) {node.stuck = 0.0;});
+			},
+
 			registerTickListener: function(listener) {
 				this.tickListeners.push(listener);},
-			registerDisplayListener: function(listener) {
-				this.displayListeners.push(listener);},
 
-			updateDisplay: function() {
-				this.displayListeners.forEach(function(listener) {listener(self);});},
+			registerListener: function(listener) {
+				this.listeners.push(listener);},
 
 			// Used to save this object.
 			saveCallback: function(save, id) {
@@ -266,7 +309,17 @@
 				result.shape = save.save(self.shape);
 				result.alpha = this.force.alpha();
 
-				return id;}
+				return id;},
+
+			stretchLinks: function() {
+				this.linkList.forEach(function(link) {
+					var dx = link.target.x - link.source.x;
+					var dy = link.target.y - link.source.y;
+					var distance = Math.sqrt(dx*dx+dy*dy);
+					if (distance > link.linkDistance * 1.1) {link.linkDistance *= 1.05;}
+					if (distance < link.linkDistance * 0.9) {link.linkDistance *= 0.95;}
+				});
+			}
 		});
 
 })(PATHBUBBLES);

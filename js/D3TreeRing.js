@@ -449,6 +449,7 @@
 								d3.select(this).attr('transform', null);
 								_this.dragging = null;
 								_this.dragOffset = null;
+								_this.dragAbsolute = null;
 								return;}
 
 							event = {
