@@ -1407,6 +1407,8 @@
 										if (d3.event.defaultPrevented) {return;} // Don't trigger on drag.
 										self.dragging = null;
 
+										console.log(d);
+
 										if (i == 0 || d.children == undefined) {return;}
 										if (d.children.length == 0) {return;}
 										var selectedData = d3.select(this).datum();//Clone Select data

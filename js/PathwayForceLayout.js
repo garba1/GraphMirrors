@@ -57,7 +57,10 @@
 
 			addNode: function(node, override) {
 				var exists = this.getNode(node.layoutId);
-				$P.ForceLayout.prototype.addNode.call(this, node, override);
+				var added = $P.ForceLayout.prototype.addNode.call(this, node, override);
+				// If there was an original, update the pathways.
+				if (added !== node) {
+					$.extend(added.pathways, node.pathways);}
 				if (node.sourcePathway) {
 					this.pathwayNodes.add(node.sourcePathway, node.layoutId);}
 				if (exists) {return exists;}

@@ -656,7 +656,8 @@
 				.on('mouseout', unhighlight);
 
 			self.updateNodes(self.nodes);
-			self.updateLinks(self.links);},
+			self.updateLinks(self.links);
+			self.updateNodes(self.followerNodes);},
 		{
 			inPathway: function(node) {
 				if (!this.pathway && !this.pathways) {return true;}
