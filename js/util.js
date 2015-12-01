@@ -281,6 +281,12 @@ $P.asyncOrdered = function(callbacks) {
 			if (-1 == index) {return;}
 			list.splice(index, 1);}};
 
+	$P.listToSet = function(list) {
+		var set = {};
+		list.forEach(function(element) {
+			set[element] = true;});
+		return set;};
+
 	$P.listEqual = function(a, b) {
 		if (a === b) {return true;}
 		if (null == a || null == b) {return false;}

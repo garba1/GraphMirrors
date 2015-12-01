@@ -11,37 +11,31 @@ def get_entities_in_pathway(pathway_reactome_id):
   c = db.cursor()
 
   # Resolve pathway id.
-  c.execute('SELECT pathway_id FROM pathways WHERE reactome_id=? LIMIT 1',
+  c.execute('SELECT id, name FROM objects WHERE type="pathway" AND reactome_id=? LIMIT 1',
             (pathway_reactome_id,))
-  pathway_id = c.fetchone()
-
-  if None == pathway_id:
+  pathway_data = c.fetchone()
+  if None == pathway_data:
     print('Illegal Pathway:', pathway_reactome_id)
     return
-
-  pathway_id = pathway_id[0]
+  pathway_id = pathway_data[0]
+  pathway_name = pathway_data[1]
+  species = pathway_data[2]
 
   # Setup pathways
-  pathway = {'id': pathway_id, 'reactome_id': pathway_reactome_id, 'entities': {}, 'reactions': {}}
+  pathway = {'id': pathway_id,
+             'reactome_id': pathway_reactome_id,
+             'name': pathway_name,
+             'species': species,
+             'entities': [],
+             'reactions': []}
   pathways = {int(pathway_reactome_id): pathway} # note reactome_id
-
-  # Grab pathway name & species
-  pathways_f = open('../pathways', 'r')
-  for line in pathways_f:
-    parts = line.strip().split('|')
-    parts[0] = int(parts[0])
-    if parts[0] in pathways:
-      pathway = pathways[parts[0]]
-      pathway['name'] = parts[1]
-      pathway['species'] = parts[2]
 
   # Grab entities in pathway.
   entities = {}
-  c.execute('SELECT e.entity_id, e.entity_type, e.name, e.location, e.reactome_id, e.uniprot_id, '
-            'e.entrez_id, ep.local_id '
-            'FROM entities AS e INNER JOIN entity_pathways AS ep '
-            'ON e.entity_id=ep.entity_id '
-            'WHERE ep.pathway_id=?',
+  c.execute('SELECT o.id, o.subtype, o.name, o.reactome_id '
+            'FROM objects o '
+            '  INNER JOIN pathways p ON o.id=p.object_id'
+            'WHERE type="entity" AND p.pathway_id=?',
             (pathway_id,))
   for (entity_id, entity_type, name, location, reactome_id, uniprot_id, entrez_id, local_id) in c:
     entity = {
@@ -121,39 +115,10 @@ def get_entities_in_pathway(pathway_reactome_id):
 
     reactions[int(reaction_id)] = reaction
 
-
-
-  # Filter out repeat reactions.
-  #reaction_names = {}
-  #to_delete = []
-  #for reaction_id in reactions:
-  #  reaction = reactions[reaction_id]
-  #  if reaction['name'] in reaction_names:
-  #    to_delete.append(reaction_id)
-  #  else:
-  #    reaction_names[reaction['name']] = True
-  #for reaction_id in to_delete:
-  #  del reactions[reaction_id]
-
-  # Grab entity pathway local ids
-  #pathways = {}
-  #c.execute('SELECT ep.entity_id, p.reactome_id, ep.local_id ' +
-  #          'FROM entity_pathways AS ep INNER JOIN pathways AS p ' +
-  #          'ON ep.pathway_id=p.pathway_id ' +
-  #          ('WHERE ep.entity_id IN (%s)' % id_list))
-  #for (entity_id, pathway_id, local_id) in c:
-  #  entity_id = int(entity_id)
-  #  entities[entity_id]['pathways'][int(pathway_id)] = local_id
-  #  if pathway_id not in pathways:
-  #    pathways[pathway_id] = {
-  #      'id': pathway_id,
-  #      'entities': {entity_id: local_id}}
-
   return {
     'entities': entities,
     'reactions': reactions,
     'pathways': pathways}
-
 
 if '__main__' == __name__:
   pathway_id = sys.argv[1]

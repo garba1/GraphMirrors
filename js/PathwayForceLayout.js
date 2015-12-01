@@ -56,6 +56,9 @@
 				this._mode = value;},
 
 			addNode: function(node, override) {
+				if (Array.isArray(node.pathways)) {
+					node.pathways = $P.listToSet(node.pathways);}
+
 				var exists = this.getNode(node.layoutId);
 				var added = $P.ForceLayout.prototype.addNode.call(this, node, override);
 				// If there was an original, update the pathways.
@@ -64,6 +67,7 @@
 				if (node.sourcePathway) {
 					this.pathwayNodes.add(node.sourcePathway, node.layoutId);}
 				if (exists) {return exists;}
+
 
 				if ('entity' === node.klass) {this.onAddEntity(node);}
 				if ('reaction' === node.klass) {this.onAddReaction(node);}
@@ -96,10 +100,10 @@
 					linkDistance: 5,
 					linkStrength: 2});
 
-				if (entity.location) {
+				entity.locations.forEach(function(location) {
 					self.addNode({
-						name: entity.location,
-						id: entity.location,
+						name: location,
+						id: location,
 						klass: 'location',
 						color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
 						gravityMultiplier: 1.2,
@@ -107,9 +111,9 @@
 					self.addLink({
 						klass: 'entity->location',
 						sourceId: entity.layoutId,
-						targetId: 'location:' + entity.location,
+						targetId: 'location:' + location,
 						linkDistance: 260,
-						linkStrength: 1});}},
+						linkStrength: 1});});},
 
 			onAddReaction: function(reaction) {
 				var self = this;

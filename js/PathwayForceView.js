@@ -44,20 +44,9 @@
 
 			function entityFilter1(node) {
 				if ('entity' !== node.klass) {return false;}
-				return true;
-				//if (self.layout.entityReactions.get(node.layoutId).length > 0) {return true;}
-				//if (node.componentNodes && $P.or(node.componentNodes, entityFilter1)) {return true;}
-				return false;}
+				return true;}
 
 			function entityFilter2(node) {
-				var i, j;
-				//var reactions = self.layout.entityReactions.get(node.layoutId);
-				//for (i = 0; i < reactions.length; ++i) {
-				//	var reaction = self.layout.getNode(reactions[i]);
-				//	var entities = Object.keys(reaction.entities).map(function(id) {return self.layout.getNode(id);});
-				//		for (j = 0; j < entities.length; ++j) {
-				//			var entity = self.visibleEntities1.indexed['entity:'+entities[j]];
-				//			if (entity && self.inPathway(entity)) {return true;}}}
 				if (self.inPathway(node)) {return true;}
 				return false;}
 
@@ -86,7 +75,8 @@
 
 			function locationFilter(node) {
 				if ('location' !== node.klass) {return false;}
-				return $P.or(self.visibleEntities, function(entity) {return entity.location === node.id;});}
+				return $P.or(self.visibleEntities, function(entity) {
+					return entity.locations.indexOf(node.id) != -1;});}
 
 			function paperFilter(node) {
 				var i;
@@ -303,8 +293,8 @@
 				//.append('title').text(function(d) {
 				//	return 'PMID: ' + d.id + '  (loading...)';});
 			self.reactions = self.nodes.filter(function(d, i) {return 'reaction' === d.klass;});
-			self.reactions.standard = self.reactions.filter(function(d, i) {return 'standard' === d.type;});
-			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.type;});
+			self.reactions.standard = self.reactions.filter(function(d, i) {return 'reactome' === d.source;});
+			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.source;});
 			self.reactions.standard
 				.each($P.D3.Reaction.appender({
 					transform: self.textTransform,
@@ -663,8 +653,9 @@
 				if (!this.pathway && !this.pathways) {return true;}
 
 				if ('entity' === node.klass || 'reaction' === node.klass) {
-					if (!node.pathways) {return true;}
+					if (!node.pathways && !node.source_pathway) {return true;}
 					function check(pathway) {
+						if (node.source_pathway == pathway.id) {return true;}
 						return node.pathways[parseInt(pathway.id)];}
 					if (this.pathway && check(this.pathway)) {return true;}
 					if (this.pathways && this.pathways.some(check)) {return true;}
