@@ -127,22 +127,18 @@ def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
             '  AND p.pathway_id=? ',
             (pathway_id,))
   for (pathway,) in c:
-    print(pathway)
     children_pathways.append(pathway)
   for i in range(len(children_pathways)):
     c.execute('SELECT reactome_id FROM objects WHERE id=?', (children_pathways[i],))
     children_pathways[i] = c.fetchone()[0]
 
-  print(children_pathways)
-
   # Loop through children pathways.
   for child_pathway in children_pathways:
-    print(len(results))
     get_pathway(child_pathway, pathway_reactome_id, results)
 
   return results
 
 if '__main__' == __name__:
   pathway_reactome_id = sys.argv[1]
-  get_pathway(pathway_reactome_id)
-  #print(json.dumps(get_pathway(pathway_reactome_id)))
+  #get_pathway(pathway_reactome_id)
+  print(json.dumps(get_pathway(pathway_reactome_id)))
