@@ -100,6 +100,12 @@ if not table_exists('reactions'):
              ' direction TEXT,'
              ' PRIMARY KEY(reaction_id, entity_id))')
 
+if not table_exists('sets'):
+  tc.execute('CREATE TABLE sets('
+             ' set_id INTEGER,'
+             ' component_id INTEGER,'
+             ' PRIMARY KEY(set_id, component_id))')
+
 ################################################################
 # Pathways
 
@@ -115,7 +121,7 @@ if 0 >= state('pathways'):
   def add_pathway(node):
     pathway_reactome_id = int(node['dbId'])
     name = node['name']
-    tc.execute('INSERT OR IGNORE INTO objects(type, name, reactome_id) '
+    tc.execute('INSERT INTO objects(type, name, reactome_id) '
                'VALUES ("pathway", ?, ?)',
                (name, pathway_reactome_id))
     tc.execute('SELECT last_insert_rowid()')
@@ -124,20 +130,13 @@ if 0 >= state('pathways'):
     pathways_r[pathway_reactome_id] = pathway_id
 
     for child in node['children']:
-      add_pathway(child)
+      if int(child['dbId']) not in pathways_r:
+        add_pathway(child)
+      tc.execute('INSERT OR IGNORE INTO pathways(pathway_id, object_id) VALUES (?, ?)',
+                 (pathway_id, pathways_r[int(child['dbId'])]))
 
   add_pathway(json.load(pathway_file))
   pathway_file.close()
-
-  # Add links between pathway hierarchy.
-  sc.execute('SELECT DB_ID, hasEvent '
-             'FROM Pathway_2_hasEvent '
-             'WHERE hasEvent in ( '
-             '  SELECT DB_ID FROM Pathway) ')
-  for (parent, child) in sc:
-    if parent in pathways_r and child in pathways_r:
-      tc.execute('INSERT OR IGNORE INTO pathways(pathway_id, object_id) VALUES (?, ?)',
-                 (pathways_r[parent], pathways_r[child],))
 
   state_set('pathways', 1)
   target.commit()
@@ -266,6 +265,32 @@ if 0 >= state('entities'):
                  (reaction_id, entity_id))
       entity_reactions[entity_id].append(reaction_id)
 
+  def add_set(entity_id):
+    entity_reactome_id = entities[entity_id]
+    sc.execute('SELECT DB_ID FROM EntitySet WHERE DB_ID=%s',
+               (entity_reactome_id,))
+    if not sc.fetchone():
+      return
+    sc.execute('SELECT hasMember, hasMember_class '
+               'FROM EntitySet_2_hasMember '
+               'WHERE DB_ID=%s ',
+               (entity_reactome_id,))
+    added = []
+    for (sub_entity_reactome_id, sub_entity_type) in sc:
+      sub_entity_id = assign_id(sub_entity_reactome_id, 'entity')
+      if sub_entity_id not in entities:
+        entities[sub_entity_id] = sub_entity_reactome_id
+        entity_reactions[sub_entity_id] = []
+        added.append(sub_entity_id)
+      tc.execute('INSERT OR IGNORE INTO sets VALUES (?, ?)',
+                 (entity_id, sub_entity_id))
+    for sub_entity_id in added:
+      add_set(sub_entity_id)
+
+  # Loop through entities, looking for sets.
+  for entity_id in entities.copy():
+    add_set(entity_id)
+
   state_set('entities', 1)
   target.commit()
 
@@ -354,6 +379,7 @@ if 1 >= state('entities'):
     sc.execute('SELECT DB_ID FROM EntitySet WHERE DB_ID=%s',
                (entity_reactome_id,))
     if sc.fetchone():
+      # Mark as a set.
       tc.execute('UPDATE objects SET subtype="set" WHERE id=?',
                  (entity_id,))
       continue

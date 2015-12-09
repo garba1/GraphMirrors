@@ -341,17 +341,17 @@
 			self.entities.proteins.crosstalking = self.entities.proteins.filter(
 				function(d, i) {return d.crosstalkCount > 1;});
 			self.entities.small = self.entities.visible.filter(function(d, i) {
-				return 'SmallMolecule' === d.type
-					|| 'Rna' === d.type
-					|| 'Dna' === d.type;});
+				return 'simple' === d.type
+					|| 'rna' === d.type
+					|| 'dna' === d.type;});
 			self.entities.complex = self.entities.visible.filter(
-				function(d, i) {return 'Complex' == d.type;});
+				function(d, i) {return 'complex' == d.type;});
 			self.entities.complex.composite = self.entities.complex.filter(
 				function(d, i) {return d.componentNodes;});
 			self.entities.other = self.entities.visible.filter(
 				function(d, i) {
-					return 'Complex' !== d.type
-						&& 'SmallMolecule' !== d.type
+					return 'complex' !== d.type
+						&& 'simple' !== d.type && 'dna' !== d.type  && 'rna' !== d.type
 						&& 'Protein' !== d.type && 'protein' !== d.type;});
 			self.entities.other.composite = self.entities.other.filter(
 				function(d, i) {return d.componentNodes;});
@@ -655,7 +655,7 @@
 				if ('entity' === node.klass || 'reaction' === node.klass) {
 					if (!node.pathways && !node.source_pathway) {return true;}
 					function check(pathway) {
-						if (node.source_pathway == pathway.id) {return true;}
+						if (node.source_pathway == parseInt(pathway.id)) {return true;}
 						return node.pathways[parseInt(pathway.id)];}
 					if (this.pathway && check(this.pathway)) {return true;}
 					if (this.pathways && this.pathways.some(check)) {return true;}
@@ -748,8 +748,8 @@
 				else if ('paper' === node.klass) {key = 'paper';}
 				else if (!this.inPathway(node)) {key = 'diminished';}
 				else if ('protein' === node.type.toLowerCase()) {key = 'protein';}
-				else if (-1 !== ['SmallMolecule','Rna','Dna'].indexOf(node.type)) {key = 'small';}
-				else if ('Complex' === node.type) {key = 'complex';}
+				else if (-1 !== ['simple','rna','dna'].indexOf(node.type)) {key = 'small';}
+				else if ('complex' === node.type) {key = 'complex';}
 				else if ('entity' === node.klass) {key = 'other';}
 
 				if (self.hiddenNodeTypes[key]) {return false;}
@@ -988,7 +988,7 @@
 			.attr('y', y)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')
-			.text('Complex');
+			.text('complex');
 
 		legend.append('rect')
 			.attr('stroke', 'black')

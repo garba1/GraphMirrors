@@ -3,7 +3,7 @@ import sqlite3
 import json
 import sys
 
-def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
+def get_pathway(pathway_reactome_id, source_pathway=None, parent_pathways=None, results=None):
 
   # Connect to database.
   db = sqlite3.connect('../data.db')
@@ -14,7 +14,13 @@ def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
     source_pathway = pathway_reactome_id
 
   if results is None:
-    results = {};
+    results = {}
+
+  if parent_pathways is None:
+    parent_pathways = []
+
+  pathway_list = parent_pathways[:]
+  pathway_list.append(pathway_reactome_id)
 
   # Setup return values
   if 'pathways' not in results:
@@ -63,12 +69,14 @@ def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
             (pathway_id,))
   for (reaction_id, reaction_reactome_id, reaction_name) in c:
     if reaction_id in reactions:
-      reactions[reaction_id].pathways.append(pathway_reactome_id);
+      for pathway_x in pathway_list:
+        if pathway_x not in reactions[reaction_id]['pathways']:
+          reactions[reaction_id]['pathways'].append(pathway_x);
     else:
       reaction = {'id': reaction_id,
                   'reactome_id': reaction_reactome_id,
                   'name': reaction_name,
-                  'pathways': [pathway_reactome_id],
+                  'pathways': pathway_list[:],
                   'source_pathway': source_pathway,
                   'source': 'reactome',
                   'entities': {},
@@ -84,19 +92,58 @@ def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
             (pathway_id,))
   for (entity_id, entity_reactome_id, entity_name, entity_type) in c:
     if entity_id in entities:
-      entities[entity_id].pathways.append(pathway_reactome_id)
+      for pathway_x in pathway_list:
+        if pathway_x not in entities[entity_id]['pathways']:
+          entities[entity_id]['pathways'].append(pathway_x)
     else:
       entity = {'id': entity_id,
                 'reactome_id': entity_reactome_id,
                 'name': entity_name,
                 'type': entity_type,
                 'locations': [],
-                'pathways': [pathway_reactome_id],
+                'pathways': pathway_list[:],
                 'source_pathway': source_pathway,
                 'db-pathways': [pathway_id],
                 'reactions': []}
       entities[entity_id] = entity
     pathway['entities'].append(entity_id)
+
+  def add_set_components(entity_id):
+    entity = entities[entity_id]
+    if 'set' != entity['type']:
+      return
+    entity['components'] = []
+    c.execute('SELECT o.id, o.reactome_id, o.name, o.subtype '
+              'FROM sets s '
+              '  INNER JOIN objects o ON o.id=s.component_id '
+              'WHERE s.set_id=?',
+              (entity_id,))
+    for (component_id, component_reactome_id, component_name, component_type) in c:
+      entity['components'].append(component_id)
+
+      if component_id in entities:
+        for pathway_x in pathway_list:
+          if pathway_x not in entities[component_id]['pathways']:
+            entities[component_id]['pathways'].append(pathway_x)
+      else:
+        component = {'id': component_id,
+                     'reactome_id': component_reactome_id,
+                     'name': component_name,
+                     'type': component_type,
+                     'locations': [],
+                     'pathways': pathway_list[:],
+                     'source_pathway': source_pathway,
+                     'db-pathways': [pathway_id],
+                     'component_of': entity_id,
+                     'reactions': []}
+        entities[component_id] = component
+      pathway['entities'].append(component_id)
+
+    for component_id in entity['components']:
+      add_set_components(component_id)
+
+  for entity_id in entities.copy():
+    add_set_components(entity_id)
 
   # Add inputs/outputs to reactions.
   c.execute('SELECT r.reaction_id, r.entity_id, r.direction '
@@ -119,6 +166,7 @@ def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
     entities[entity_id]['locations'].append(locations[location_id])
 
   # Collect children pathways
+  pathway['children'] = []
   children_pathways = []
   c.execute('SELECT object_id '
             'FROM pathways p '
@@ -132,9 +180,13 @@ def get_pathway(pathway_reactome_id, source_pathway=None, results=None):
     c.execute('SELECT reactome_id FROM objects WHERE id=?', (children_pathways[i],))
     children_pathways[i] = c.fetchone()[0]
 
+  #print(pathway_reactome_id, len(results['pathways']), len(results['reactions']), len(results['entities']))
+
   # Loop through children pathways.
+  parents = parent_pathways[:]
+  parents.append(pathway_reactome_id)
   for child_pathway in children_pathways:
-    get_pathway(child_pathway, pathway_reactome_id, results)
+    get_pathway(child_pathway, source_pathway, parents, results)
 
   return results
 

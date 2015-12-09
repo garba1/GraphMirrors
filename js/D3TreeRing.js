@@ -432,7 +432,7 @@
 							if (!_this.dragging || !_this.dragLeft) {return;}
 							_this.dragOffset.x += d3.event.dx;
 							_this.dragOffset.y += d3.event.dy;
-							_this.dragAbsolute = {x: d3.event.x, y: d3.event.y};
+							_this.dragAbsolute = d3.mouse($P.state.mainCanvas.html);
 							var dx = _this.dragOffset.x,
 									dy = _this.dragOffset.y;
 							d3.select(this).attr('transform', 'translate('+dx+','+dy+')');
@@ -443,8 +443,9 @@
 							if (!_this.dragLeft) {return;}
 							if (!_this.dragAbsolute) {return;}
 
-							x = _this.dragAbsolute.x + _this.parent.x + _this.parent.w * 0.5,
-							y = _this.dragAbsolute.y + _this.parent.y + _this.parent.h * 0.5;
+							x = _this.dragAbsolute[0] + $P.state.scrollX;
+							y = _this.dragAbsolute[1];
+							_this.dragAbsolute = undefined;
 							if (self.parent.contains(x, y)) {
 								d3.select(this).attr('transform', null);
 								_this.dragging = null;

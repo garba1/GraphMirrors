@@ -61,8 +61,6 @@
 						id: pathway.pathwayId,
 						name: pathway.pathwayName,
 						bubble: self});
-					//self.layout.consolidateComposite();
-					//self.layout.consolidateReactions();
 
 					pathway = $.extend({}, pathway, {type: 'pathway'});
 					self.pathways.push(pathway);
@@ -76,12 +74,14 @@
 							$.each(jsonData.entities, function(entityId, entity) {
 								entity.klass = 'entity';
 								entity.sourcePathway = pathway.pathwayId;
-								self.layout.addNode(entity);});}
+								if (!entity.component_of) {
+									self.layout.addNode(entity);}});}
 						if (jsonData.reactions) {
 							$.each(jsonData.reactions, function(reactionId, reaction) {
 								reaction.klass = 'reaction';
 								reaction.sourcePathway = pathway.pathwayId;
 								self.layout.addNode(reaction);});}
+						self.layout.data = jsonData;
 						self.layout.createForce();
 						onFinish();},
 					{type: 'GET', data: {
