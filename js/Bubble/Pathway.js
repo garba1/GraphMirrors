@@ -1,9 +1,9 @@
 (function($P) {
 	'use strict';
 
-	$P.Bubble.Pathway = $P.defineClass(
+	$P.Bubble.Table = $P.defineClass(
 		$P.Bubble,
-		function PathwayBubble(config) {
+		function PathwayBubbl(config) {
 			config = $.extend(config, {
 				closeMenu: true,
 				groupMenu: true});

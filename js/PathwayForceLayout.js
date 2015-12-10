@@ -106,8 +106,8 @@
 						id: location,
 						klass: 'location',
 						color: self.locationColors[self.nextLocationColor++ % self.locationColors.length],
-						gravityMultiplier: 1.2,
-						charge: -70});
+						gravityMultiplier: 0.8,
+						charge: -120});
 					self.addLink({
 						klass: 'entity->location',
 						sourceId: entity.layoutId,

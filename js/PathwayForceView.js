@@ -357,7 +357,7 @@
 				function(d, i) {return d.componentNodes;});
 			// The big transparent background circles encoding location.
 			self.entities.proteins.each(function(d, i) {
-				var location = self.layout.getNode('location:'+d.location);
+				var location = self.layout.getNode('location:'+d.locations[0]);
 				if (location) {
 					self.drawBackground.append('circle')
 						.attr('class', 'follower')
@@ -368,8 +368,9 @@
 						.attr('fill-opacity', 0.25)
 						.attr('pointer-events', 'none') // Can't click on them.
 						.attr('r', 100);}});
+			console.log(self.entities.small);
 			self.entities.small.each(function(d, i) {
-				var location = self.layout.getNode('location:'+d.location);
+				var location = self.layout.getNode('location:'+d.locations[0]);
 				if (location) {
 					self.drawBackground.append('circle')
 						.attr('class', 'follower')
@@ -380,7 +381,7 @@
 						.attr('pointer-events', 'none') // Can't click on them.
 						.attr('r', 100);}});
 			self.entities.complex.each(function(d, i) {
-				var location = self.layout.getNode('location:'+d.location);
+				var location = self.layout.getNode('location:'+d.locations[0]);
 				if (location) {
 					self.drawBackground.append('circle')
 						.attr('class', 'follower')
@@ -391,7 +392,7 @@
 						.attr('pointer-events', 'none') // Can't click on them.
 						.attr('r', 100);}});
 			self.entities.other.each(function(d, i) {
-				var location = self.layout.getNode('location:'+d.location);
+				var location = self.layout.getNode('location:'+d.locations[0]);
 				if (location) {
 					self.drawBackground.append('circle')
 						.attr('class', 'follower')
@@ -402,7 +403,7 @@
 						.attr('pointer-events', 'none') // Can't click on them.
 						.attr('r', 100);}});
 			self.entities.diminished.each(function(d, i) {
-				var location = self.layout.getNode('location:'+d.location);
+				var location = self.layout.getNode('location:'+d.locations[0]);
 				if (location) {
 					self.drawBackground.append('circle')
 						.attr('class', 'follower')

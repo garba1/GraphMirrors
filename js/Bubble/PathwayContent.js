@@ -1,7 +1,7 @@
 (function($P){
 	'use strict';
 
-	$P.Bubble.PathwayContent = $P.defineClass(
+ 	$P.Bubble.PathwayContent = $P.defineClass(
 		$P.HtmlObject,
 		function  PathwayBubbleContent(config) {
 			var self = this;

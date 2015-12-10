@@ -257,6 +257,7 @@
 					this.svg.attr('width', this.w - this.legendWidth || 1).attr('height', this.h);}
 				if (this.display) {this.display.size = [this.w - this.legendWidth, this.h];}
 				if (this.legend) {
+					this.legend.select('line').attr('y2', this.h);
 					this.legend
 						.attr('x', this.w - this.legendWidth)
 						.attr('width', this.legendWidth)
