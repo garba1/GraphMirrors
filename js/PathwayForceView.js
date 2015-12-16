@@ -170,7 +170,7 @@
 				.attr('stroke-width', 1);
 			 */
 			self.locationLinks = self.links.filter(
-				function(d, i) {return 'entity->location' === d.klass;});
+				function(d, i) {return 'entity->location' === d.klass && !d.source_subsumed && !d.target_subsumed;});
 			self.locationLinks.append('line')
 				.attr('stroke', 'black')
 				.attr('stroke-width', 0.5)
@@ -293,9 +293,9 @@
 				//.append('title').text(function(d) {
 				//	return 'PMID: ' + d.id + '  (loading...)';});
 			self.reactions = self.nodes.filter(function(d, i) {return 'reaction' === d.klass;});
-			self.reactions.standard = self.reactions.filter(function(d, i) {return 'reactome' === d.source;});
-			self.reactions.phosphorylated = self.reactions.filter(function(d, i) {return 'phosphorylation' === d.source;});
-			self.reactions.standard
+			self.reactions.reactome = self.reactions.filter(function(d, i) {return 'reactome' === d.source;});
+			self.reactions.igep = self.reactions.filter(function(d, i) {return 'iGep' === d.source;});
+			self.reactions.reactome
 				.each($P.D3.Reaction.appender({
 					transform: self.textTransform,
 					size: nodeSize(14)}))
@@ -311,7 +311,7 @@
 					console.log(d);})
 				.call(rightclickNote)
 				.append('title').text(nodeTitle);
-			self.reactions.phosphorylated
+			self.reactions.igep
 				.each($P.D3.Reaction.appender({
 					transform: self.textTransform,
 					size: nodeSize(14),
@@ -348,13 +348,15 @@
 				function(d, i) {return 'complex' == d.type;});
 			self.entities.complex.composite = self.entities.complex.filter(
 				function(d, i) {return d.componentNodes;});
-			self.entities.other = self.entities.visible.filter(
+			self.entities.set = self.entities.visible.filter(
+				function(d, i) {return 'set' == d.type;});
+			/*self.entities.other = self.entities.visible.filter(
 				function(d, i) {
 					return 'complex' !== d.type
 						&& 'simple' !== d.type && 'dna' !== d.type  && 'rna' !== d.type
-						&& 'Protein' !== d.type && 'protein' !== d.type;});
-			self.entities.other.composite = self.entities.other.filter(
-				function(d, i) {return d.componentNodes;});
+						&& 'Protein' !== d.type && 'protein' !== d.type;});*/
+			//self.entities.other.composite = self.entities.other.filter(
+			//	function(d, i) {return d.componentNodes;});
 			// The big transparent background circles encoding location.
 			self.entities.proteins.each(function(d, i) {
 				var location = self.layout.getNode('location:'+d.locations[0]);
@@ -391,7 +393,7 @@
 						.attr('fill-opacity', 0.25)
 						.attr('pointer-events', 'none') // Can't click on them.
 						.attr('r', 100);}});
-			self.entities.other.each(function(d, i) {
+			self.entities.set.each(function(d, i) {
 				var location = self.layout.getNode('location:'+d.locations[0]);
 				if (location) {
 					self.drawBackground.append('circle')
@@ -533,14 +535,15 @@
 				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 
-			// Other
-			self.entities.other
-				.append('rect')
-				.attr('stroke', 'black')
-				.attr('fill', self.getExpressionColor.bind(self))
-				.attr('width', nodeSize(10)).attr('height', nodeSize(10))
-				.attr('x', nodeSize(-5)).attr('y', nodeSize(-5))
-				.attr('transform', self.textTransform)
+			// Sets
+			self.entities.set.objects = {};
+			self.entities.set
+				.each($P.D3.Set.appender({
+					transform: self.textTransform,
+					size: nodeSize(14),
+					fill: self.getExpressionColor.bind(self),
+					collector: self.entities.set.objects}))
+				.selectAll('.set')
 				.attr('pointer-events', 'all')
 				.on('click', function(d) {
 					$P.state.scene.record({
@@ -732,6 +735,9 @@
 
 				if (undefined === node) {return false;}
 
+				while (node.subsumed) {
+					node = self.layout.getNode('entity:' + node.component_of);}
+
 				if ('entitylabel' === node.klass) {
 					return self.isNodeVisible(self.layout.getNode('entity:' + node.id));}
 
@@ -745,12 +751,14 @@
 					if (0 === count) {return false;}}
 
 				if ('location' === node.klass) {key = 'location';}
-				else if ('reaction' === node.klass) {key = 'reaction';}
+				else if ('reaction' === node.klass && 'reactome' === node.source) {key = 'reaction:reactome';}
+				else if ('reaction' === node.klass && 'iGep' === node.source) {key = 'reaction:igep';}
 				else if ('paper' === node.klass) {key = 'paper';}
 				else if (!this.inPathway(node)) {key = 'diminished';}
 				else if ('protein' === node.type.toLowerCase()) {key = 'protein';}
 				else if (-1 !== ['simple','rna','dna'].indexOf(node.type)) {key = 'small';}
 				else if ('complex' === node.type) {key = 'complex';}
+				else if ('set' == node.type) {key = 'set';}
 				else if ('entity' === node.klass) {key = 'other';}
 
 				if (self.hiddenNodeTypes[key]) {return false;}
@@ -871,8 +879,12 @@
 				if ('paper' === nodeType) {
 					self.updateNodes(self.papers);
 					self.updateLinks(self.paperLinks);}
-				else if ('reaction' === nodeType) {
-					self.updateNodes(self.reactions);
+				else if ('reaction:reactome' === nodeType) {
+					self.updateNodes(self.reactions.reactome);
+					self.updateLinks(self.paperLinks);
+					self.updateLinks(self.reactionLinks);}
+				else if ('reaction:igep' === nodeType) {
+					self.updateNodes(self.reactions.igep);
 					self.updateLinks(self.paperLinks);
 					self.updateLinks(self.reactionLinks);}
 				else {
@@ -888,8 +900,8 @@
 					else if ('complex' === nodeType) {
 						self.updateNodes(self.entities.complex);
 						self.updateNodes(self.reactions);}
-					else if ('other' === nodeType) {
-						self.updateNodes(self.entities.other);
+					else if ('set' === nodeType) {
+						self.updateNodes(self.entities.set);
 						self.updateNodes(self.reactions);}
 					self.updateNodes(self.entityLabels);
 					self.updateLinks(self.reactionLinks);
@@ -998,7 +1010,7 @@
 			.attr('transform', 'translate('+(leftX+98)+','+(y-11)+')rotate(45)');
 
 		y += 24;
-		checkbox('other', y);
+		checkbox('set', y);
 
 		legend.append('text')
 			.style('font-size', '14px')
@@ -1006,13 +1018,11 @@
 			.attr('y', y)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')
-			.text('Other');
+			.text('Set');
 
-		legend.append('rect')
-			.attr('stroke', 'black')
-			.attr('fill', 'white')
-			.attr('width', 15).attr('height', 15)
-			.attr('transform', 'translate('+(leftX+90)+','+(y-7)+')');
+		legend.each($P.D3.Set.appender({
+			x: leftX + 99,
+			y: y}));
 
 		y += 30;
 		checkbox('diminished', y);
@@ -1036,7 +1046,7 @@
 
 
 		y += 26;
-		checkbox('reaction', y);
+		checkbox('reaction:reactome', y);
 
 		legend.append('text')
 			.style('font-size', '14px')
@@ -1044,9 +1054,25 @@
 			.attr('y', y)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')
-			.text('Reaction');
+			.text('Reactome');
 
 		legend.each($P.D3.Reaction.appender({
+			x: leftX + 98,
+			y: y}));
+
+		y += 26;
+		checkbox('reaction:igep', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('iGep');
+
+		legend.each($P.D3.Reaction.appender({
+			fill: 'blue',
 			x: leftX + 98,
 			y: y}));
 

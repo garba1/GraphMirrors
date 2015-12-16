@@ -74,8 +74,10 @@
 							$.each(jsonData.entities, function(entityId, entity) {
 								entity.klass = 'entity';
 								entity.sourcePathway = pathway.pathwayId;
-								if (!entity.component_of) {
-									self.layout.addNode(entity);}});}
+								if (entity.component_of) {
+									entity.subsumed = true;
+								}
+								self.layout.addNode(entity);});}
 						if (jsonData.reactions) {
 							$.each(jsonData.reactions, function(reactionId, reaction) {
 								reaction.klass = 'reaction';

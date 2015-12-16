@@ -217,16 +217,17 @@
 
 			onRemovePaper: function(paper) {},
 
-			/*
-			nodeFilter: function(node) {
+			nodeFilter: function _filter(node) {
 				var self = this;
-				if (['entity', 'reaction'].indexOf(node.klass) == -1) {return true;}
-				var neighbors = self.getNeighbors(node.layoutId).filter(function(layoutId) {
-					var neighbor = self.getNode(layoutId);
-					if (!neighbor) {return false;}
-					return ['entity', 'reaction', 'paper'].indexOf(neighbor.klass) != -1;});
-				return neighbors.length > 1;},
-			 */
+				if ('entity' == node.klass) {
+					return !node.subsumed;}
+				if ('reaction' == node.klass) {
+					var neighbors = self.getNeighbors(node.layoutId).filter(function(layoutId) {
+						var neighbor = self.getNode(layoutId);
+						if (!neighbor) {return false;}
+						return ['entity', 'reaction', 'paper'].indexOf(neighbor.klass) != -1;});
+					return neighbors.some(_filter, self);}
+				return true;},
 
 			setPathways: function(pathways, finish) {
 				this.getNodesInClass('entity').forEach(function(entity) {
@@ -237,6 +238,7 @@
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 3);});
 				this.createForce();
 				if (finish) {finish();}},
+
 			consolidateComposite: function() {
 				var self = this;
 				self.getNodesInClass('entity').forEach(function(entity) {
@@ -249,6 +251,7 @@
 							.filter(function(link) {return link.source === entity || link.target === entity;})
 							.slice(1).forEach(function(link) {self.removeLink(link.layoutId);});}
 				});},
+
 			consolidateReactions: function() {
 				var self = this,
 						reactions = this.getNodesInClass('reaction'),

@@ -2,7 +2,6 @@
 
 import mysql.connector
 import sqlite3
-import re
 import json
 
 target = sqlite3.connect('data.db')
@@ -62,6 +61,7 @@ tc.execute('INSERT OR IGNORE INTO state VALUES (?, ?)', ('pathways', 0))
 tc.execute('INSERT OR IGNORE INTO state VALUES (?, ?)', ('reactions', 0))
 tc.execute('INSERT OR IGNORE INTO state VALUES (?, ?)', ('entities', 0))
 tc.execute('INSERT OR IGNORE INTO state VALUES (?, ?)', ('locations', 0))
+tc.execute('INSERT OR IGNORE INTO state VALUES (?, ?)', ('igep', 0))
 
 def state(key):
   tc.execute('SELECT value FROM state WHERE name=?', (key,))
@@ -105,6 +105,23 @@ if not table_exists('sets'):
              ' set_id INTEGER,'
              ' component_id INTEGER,'
              ' PRIMARY KEY(set_id, component_id))')
+
+if not table_exists('sources'):
+  tc.execute('CREATE TABLE sources( '
+             '  object_id INTEGER, '
+             '  source TEXT)')
+
+if not table_exists('uniprot'):
+  tc.execute('CREATE TABLE uniprot( '
+             '  id INTEGER, '
+             '  uniprot_id TEXT, '
+             '  PRIMARY KEY(id, uniprot_id))')
+
+if not table_exists('papers'):
+  tc.execute('CREATE TABLE papers( '
+             '  paper_id INTEGER, '
+             '  object_id TEXT, '
+             '  PRIMARY KEY(paper_id, object_id))')
 
 ################################################################
 # Pathways
@@ -213,7 +230,6 @@ else:
 
 entities = {} # id -> reactome_id
 entities_2 = {} # reactome_id -> id
-entity_pathways = {} # enttiy -> [pathway]
 entity_reactions = {} # enttiy -> [reaction]
 
 accessioned_type = {
@@ -290,6 +306,19 @@ if 0 >= state('entities'):
   # Loop through entities, looking for sets.
   for entity_id in entities.copy():
     add_set(entity_id)
+
+  # Grab cross-reference ids.
+  for entity_id in entities:
+    entity_reactome_id = entities[entity_id]
+    sc.execute('SELECT b.identifier '
+               'FROM EntityWithAccessionedSequence a '
+               '  INNER JOIN ReferenceEntity b ON a.referenceEntity=b.DB_ID '
+               'WHERE a.DB_ID=%s AND b.referenceDatabase=2',
+               (entity_reactome_id,))
+    uniprot_id = sc.fetchone()
+    if uniprot_id:
+      tc.execute('INSERT OR IGNORE INTO uniprot VALUES (?, ?)',
+                 (entity_id, uniprot_id[0]))
 
   state_set('entities', 1)
   target.commit()
@@ -403,6 +432,31 @@ if 2 >= state('entities'):
              '    INNER JOIN pathways p ON r.reaction_id=p.object_id '
              '  WHERE o.type="entity"')
 
+  def add_set(entity_id):
+    # Get pathways for entity.
+    tc.execute('SELECT pathway_id FROM pathways WHERE object_id=?',
+               (entity_id,))
+    pathways = []
+    for (pathway,) in tc:
+      pathways.append(pathway)
+
+    # Get components for entity.
+    components = []
+    tc.execute('SELECT component_id FROM sets WHERE set_id=?',
+               (entity_id,))
+    for (component,) in tc:
+      components.append(component)
+
+    for component in components:
+      for pathway in pathways:
+        tc.execute('INSERT OR IGNORE INTO pathways VALUES(?, ?)',
+                   (pathway, component))
+      add_set(component)
+
+  # Loop through entities, assigning sets to their papent's pathways.
+  for entity_id in entities:
+    add_set(entity_id)
+
   # Loop through entities, assigning a name.
   for entity_id in entities:
     entity_reactome_id = entities[entity_id]
@@ -415,3 +469,9 @@ if 2 >= state('entities'):
 
   state_set('entities', 3)
   target.commit()
+
+# Register reactome as source for all objects.
+tc.execute('INSERT INTO sources '
+           '  SELECT id, "reactome" FROM objects ')
+
+target.commit()

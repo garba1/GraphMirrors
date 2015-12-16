@@ -62,12 +62,13 @@ def get_pathway(pathway_reactome_id, source_pathway=None, parent_pathways=None, 
   pathways[int(pathway_reactome_id)] = pathway
 
   # Create Reactions table.
-  c.execute('SELECT o.id, o.reactome_id, o.name '
+  c.execute('SELECT o.id, o.reactome_id, o.name, s.source '
             'FROM objects o '
             '  INNER JOIN pathways p ON o.id=p.object_id '
+            '  INNER JOIN sources s ON o.id=s.object_id '
             'WHERE p.pathway_id=? AND o.type="reaction"',
             (pathway_id,))
-  for (reaction_id, reaction_reactome_id, reaction_name) in c:
+  for (reaction_id, reaction_reactome_id, reaction_name, source) in c:
     if reaction_id in reactions:
       for pathway_x in pathway_list:
         if pathway_x not in reactions[reaction_id]['pathways']:
@@ -78,7 +79,7 @@ def get_pathway(pathway_reactome_id, source_pathway=None, parent_pathways=None, 
                   'name': reaction_name,
                   'pathways': pathway_list[:],
                   'source_pathway': source_pathway,
-                  'source': 'reactome',
+                  'source': source,
                   'entities': {},
                   'papers': []}
       reactions[reaction_id] = reaction
@@ -122,6 +123,7 @@ def get_pathway(pathway_reactome_id, source_pathway=None, parent_pathways=None, 
       entity['components'].append(component_id)
 
       if component_id in entities:
+        entities[component_id]['component_of'] = entity_id
         for pathway_x in pathway_list:
           if pathway_x not in entities[component_id]['pathways']:
             entities[component_id]['pathways'].append(pathway_x)
@@ -153,7 +155,8 @@ def get_pathway(pathway_reactome_id, source_pathway=None, parent_pathways=None, 
             (pathway_id,))
   for (reaction_id, entity_id, direction) in c:
     reactions[reaction_id]['entities'][entity_id] = direction
-    entities[entity_id]['reactions'].append(reaction_id)
+    if entity_id in entities:
+      entities[entity_id]['reactions'].append(reaction_id)
 
   # Add locations to entities.
   c.execute('SELECT o.id, l.location_id '
@@ -188,9 +191,54 @@ def get_pathway(pathway_reactome_id, source_pathway=None, parent_pathways=None, 
   for child_pathway in children_pathways:
     get_pathway(child_pathway, source_pathway, parents, results)
 
+  if 0 == len(parent_pathways):
+    # Find any phosphorylation reactions.
+    phos = []
+    c.execute('SELECT o.id, o.name '
+              'FROM objects o '
+              '  INNER JOIN sources s ON s.object_id=o.id '
+              'WHERE o.type="reaction" AND s.source="iGep" ')
+    for (reaction_id, name) in c:
+      phos.append({'id': reaction_id,
+                   'name': name,
+                   'pathways': [],
+                   'source_pathway': source_pathway,
+                   'source': 'iGep',
+                   'entities': {},
+                   'papers': []})
+    # Add component entity ids.
+    for reaction in phos:
+      c.execute('SELECT entity_id FROM reactions WHERE reaction_id=?',
+                (reaction['id'],))
+      for (entity_id,) in c:
+        reaction['entities'][entity_id] = 'input'
+        if entity_id in entities:
+          entities[entity_id]['reactions'].append(reaction['id'])
+    # Filter out reactions that don't have a shared input.
+    for reaction in phos[:]:
+      found = False
+      for entity_id in reaction['entities']:
+        if entity_id in entities:
+          found = True
+          break
+      if not found:
+        phos.remove(reaction)
+    # Add to results
+    for reaction in phos:
+      reactions[reaction['id']] = reaction
+
+  c.execute('SELECT o.id, y.paper_id '
+            'FROM objects o '
+            '  INNER JOIN pathways p ON o.id=p.object_id '
+            '  INNER JOIN papers y ON y.object_id=o.id '
+            'WHERE p.pathway_id=? ',
+            (pathway_id,))
+  for (reaction_id, paper_id) in c:
+    reactions[reaction_id]['papers'].append(paper_id)
+
   return results
 
 if '__main__' == __name__:
   pathway_reactome_id = sys.argv[1]
-  #get_pathway(pathway_reactome_id)
-  print(json.dumps(get_pathway(pathway_reactome_id)))
+  result = get_pathway(pathway_reactome_id)
+  print(json.dumps(result))

@@ -73,10 +73,14 @@
 				self.linkList = [];
 				$.each(self.links, function(layoutId, link) {
 					var source = self.getNode(link.sourceId);
+					while (source && source.component_of && source.subsumed) {
+						link.source_subsumed = true;
+						source = self.getNode('entity:' + source.component_of);}
 					var target = self.getNode(link.targetId);
+					while (target && target.component_of && target.subsumed) {
+						link.target_subsumed = true;
+						target = self.getNode('entity:' + target.component_of);}
 					if (source && target) {
-						// Force's link inherits from original link, uses actual
-						// source and target node instead of layoutId.
 						link.source = source;
 						link.target = target;
 						self.linkList.push(link);}});
