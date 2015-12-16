@@ -32,11 +32,6 @@
 
 		},
 		{
-			getExpressionColor: function(pathwayIndex, symbol) {
-				if ('up' === this.expression[symbol]) {return 'yellow';}
-				if ('down' === this.expression[symbol]) {return 'cyan';}
-				return 'white';},
-
 			addPathway: function(pathway, mode, finish) {
 				var self = this;
 

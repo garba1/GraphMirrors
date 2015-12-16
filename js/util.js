@@ -366,4 +366,14 @@ $P.asyncOrdered = function(callbacks) {
 		input.click();
 		return input;};
 
+	////////////////////////////////////////////////////////////////
+	// Object Operations
+
+	// Return true if an object is empty.
+	$P.isEmpty = function(object) {
+		for (var key in object) {
+			if (object.hasOwnProperty(key)) {
+				return false;}}
+		return true;};
+
 })(PATHBUBBLES);

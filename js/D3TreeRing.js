@@ -460,7 +460,7 @@
 								pathwayName: d.name,
 								symbols: d.symbols,
 								strokeStyle: self.parent.strokeStyle,
-								expression: _this.getExpressionMap()};
+								expression: self.xpressionMap()};
 							result = $P.state.scene.sendEvent(event);
 
 							if (!result) {
@@ -1596,6 +1596,8 @@
 							this.expressionMap[expression.symbol] = 'down';}
 						else if (expression.ratio >= limits.max) {
 							this.expressionMap[expression.symbol] = 'up';}
+						else {
+							this.expressionMap[expression.symbol] = 'neutral';}
 					}.bind(this));}
 				return this.expressionMap;},
 			/**

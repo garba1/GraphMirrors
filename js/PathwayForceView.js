@@ -685,6 +685,14 @@
 
 				return pathways;},
 
+			hasExpression: function() {
+				if (this.pathway) {
+					return !$P.isEmpty(this.pathway.expression);}
+				if (this.pathways) {
+					return $P.or(this.pathways, function(pathway) {
+						return !$P.isEmpty(pathway.expression);});}
+				return false;},
+
 			getExpression: function(node) {
 				if (this.pathway) {
 					return this.pathway.expression[node.name];}
@@ -694,10 +702,13 @@
 				return null;},
 
 			getExpressionColor: function(node) {
+				if (!this.hasExpression()) {return 'white';}
 				var expression = this.getExpression(node);
 				if ('up' === expression) {return '#f00';}
 				if ('down' === expression) {return '#0f0';}
-				return 'white';},
+				if ('neutral' === expression) {return '#fff';}
+				return '#00f';},
+
 			onShapeChange: function() {
 				var self = this;
 				$P.ForceView.prototype.onShapeChange.call(self);
@@ -956,6 +967,16 @@
 					callback(id, state);}
 			});}
 
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', leftX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Entities:');
+
+		y += 24;
+
 		checkbox('protein', y);
 
 		legend.append('text')
@@ -1044,39 +1065,7 @@
 			x: leftX + 98,
 			y: y}));
 
-
-		y += 26;
-		checkbox('reaction:reactome', y);
-
-		legend.append('text')
-			.style('font-size', '14px')
-			.attr('x', textX)
-			.attr('y', y)
-			.attr('fill', 'black')
-			.attr('dominant-baseline', 'middle')
-			.text('Reactome');
-
-		legend.each($P.D3.Reaction.appender({
-			x: leftX + 98,
-			y: y}));
-
-		y += 26;
-		checkbox('reaction:igep', y);
-
-		legend.append('text')
-			.style('font-size', '14px')
-			.attr('x', textX)
-			.attr('y', y)
-			.attr('fill', 'black')
-			.attr('dominant-baseline', 'middle')
-			.text('iGep');
-
-		legend.each($P.D3.Reaction.appender({
-			fill: 'blue',
-			x: leftX + 98,
-			y: y}));
-
-		y += 20;
+		y += 24;
 		checkbox('paper', y);
 		legend.append('text')
 			.style('font-size', '14px')
@@ -1113,6 +1102,47 @@
 			.attr('y', y)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')
+			.text('Reactions:');
+
+		y += 26;
+		checkbox('reaction:reactome', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Reactome');
+
+		legend.each($P.D3.Reaction.appender({
+			x: leftX + 98,
+			y: y}));
+
+		y += 26;
+		checkbox('reaction:igep', y);
+
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('iGep');
+
+		legend.each($P.D3.Reaction.appender({
+			fill: 'blue',
+			x: leftX + 98,
+			y: y}));
+
+
+		y += 24;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', leftX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
 			.text('Expression:');
 
 		y += 19;
@@ -1137,11 +1167,41 @@
 			.attr('y', y)
 			.attr('fill', 'black')
 			.attr('dominant-baseline', 'middle')
+			.text('Neutral');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', '#fff')
+			.attr('r', 7.5)
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		y += 19;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
 			.text('Down');
 
 		legend.append('circle')
 			.attr('stroke', 'black')
 			.attr('fill', '#0f0')
+			.attr('r', 7.5)
+			.attr('transform', 'translate('+(leftX+98)+','+y+')');
+
+		y += 19;
+		legend.append('text')
+			.style('font-size', '14px')
+			.attr('x', textX)
+			.attr('y', y)
+			.attr('fill', 'black')
+			.attr('dominant-baseline', 'middle')
+			.text('Missing');
+
+		legend.append('circle')
+			.attr('stroke', 'black')
+			.attr('fill', '#00f')
 			.attr('r', 7.5)
 			.attr('transform', 'translate('+(leftX+98)+','+y+')');
 
