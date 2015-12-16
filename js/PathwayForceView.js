@@ -32,15 +32,20 @@
 			self.nodeSize = nodeSize;
 
 			function nodeTitle(d) {
-				var title = d.name;
-				if (d.componentNodes) {
-					title = [d.name, ':'];
-					d.componentNodes.forEach(function(node) {
-						if (!node || !node.name) {return;}
-						title.push('\n');
-						title.push(node.name);});
-					title = title.join('');}
-				return title;}
+				var title = [];
+				function print(node, prefix) {
+					if (!node || !node.name) {return;}
+					title.push(prefix);
+					title.push(node.name);
+					if (node.components) {
+						title.push(':\n');
+						prefix = prefix + '  ';
+						self.getComponents(node).forEach(function(node) {
+							title.push(prefix);
+							title.push(node.name);
+							title.push('\n');});}}
+				print(d, '');
+				return title.join('');}
 
 			function entityFilter1(node) {
 				if ('entity' !== node.klass) {return false;}
@@ -438,6 +443,7 @@
 				.call(rightclickNote)
 				.append('title').text(nodeTitle);
 			self.entities.proteins.objects = {};
+			console.log('expression', self.hasExpression());
 			self.entities.proteins
 				.each($P.D3.Protein.appender({
 					transform: self.textTransform,
@@ -687,27 +693,50 @@
 
 			hasExpression: function() {
 				if (this.pathway) {
-					return !$P.isEmpty(this.pathway.expression);}
+					return !$P.isEmpty(this.pathway.expression) && this.pathway.expression;}
 				if (this.pathways) {
 					return $P.or(this.pathways, function(pathway) {
-						return !$P.isEmpty(pathway.expression);});}
+						return !$P.isEmpty(pathway.expression) && pathway.expression;});}
 				return false;},
 
 			getExpression: function(node) {
+				var self = this;
+				function get(node, pathway) {
+					var expression = pathway.expression;
+					if (!expression) {return false;}
+					console.log('  ', node.name);
+					var value = expression[node.name];
+					if (value) {return value;}
+					if (!node.components) {return false;}
+					for (var i = 0; i < node.components.length; ++i) {
+						var component_id = node.components[i];
+						var component = self.layout.getNode('entity:' + component_id);
+						if (!component) {continue;}
+						value = get(component, pathway);
+						if (value) {return value;}}
+					return false;}
+				var g = get.bind(this, node);
+
 				if (this.pathway) {
-					return this.pathway.expression[node.name];}
+					return g(this.pathway);}
 				if (this.pathways) {
-					return $P.or(this.pathways, function(pathway) {
-						return pathway.expression[node.name];});}
+					return $P.or(this.pathways, g);}
 				return null;},
 
 			getExpressionColor: function(node) {
 				if (!this.hasExpression()) {return 'white';}
+				console.log('GET EXPRESSION:');
 				var expression = this.getExpression(node);
 				if ('up' === expression) {return '#f00';}
 				if ('down' === expression) {return '#0f0';}
 				if ('neutral' === expression) {return '#fff';}
 				return '#00f';},
+
+			// Get the component nodes of a node.
+			getComponents: function(node) {
+				var self = this;
+				return node.components.map(function(component_id) {
+					return self.layout.getNode('entity:' + component_id);});},
 
 			onShapeChange: function() {
 				var self = this;

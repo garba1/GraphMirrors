@@ -460,7 +460,7 @@
 								pathwayName: d.name,
 								symbols: d.symbols,
 								strokeStyle: self.parent.strokeStyle,
-								expression: self.xpressionMap()};
+								expression: self.getExpressionMap()};
 							result = $P.state.scene.sendEvent(event);
 
 							if (!result) {

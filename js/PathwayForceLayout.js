@@ -81,8 +81,6 @@
 
 				function nodeSize(target, d) {
 					var size = 1;
-					if (d.componentNodes && d.componentNodes.length) {
-						size = Math.pow(d.componentNodes.length, 0.4);}
 					return target * size;}
 
 				entity.charge = nodeSize(-200, entity);
@@ -238,19 +236,6 @@
 					entity.gravityMultiplier = Math.max(1, (count - 1) * 3);});
 				this.createForce();
 				if (finish) {finish();}},
-
-			consolidateComposite: function() {
-				var self = this;
-				self.getNodesInClass('entity').forEach(function(entity) {
-					var components = [];
-					if (entity.components) {
-						$.each(entity.components, function(component_id, component_type) {
-							components.push('entity:' + component_id);});
-						self.groupNodes(entity, components, false);
-						self.getLinks('entity:location')
-							.filter(function(link) {return link.source === entity || link.target === entity;})
-							.slice(1).forEach(function(link) {self.removeLink(link.layoutId);});}
-				});},
 
 			consolidateReactions: function() {
 				var self = this,
